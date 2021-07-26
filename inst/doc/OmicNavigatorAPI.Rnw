@@ -1,0 +1,523 @@
+%\VignetteIndexEntry{OmicNavigator API}
+%\VignetteEncoding{UTF-8}
+
+\documentclass[10pt, letterpaper]{article}
+
+\usepackage{fancyvrb}
+\usepackage{framed}
+\usepackage[textwidth=6in]{geometry}
+\usepackage[colorlinks=true,urlcolor=blue,breaklinks]{hyperref}
+\usepackage[utf8]{inputenc}
+
+\usepackage{color}
+\definecolor{blue}{rgb}{0,0,0.5}
+
+\usepackage{Sweave}
+\RecustomVerbatimEnvironment{Sinput}{Verbatim}{
+  xleftmargin=2em,
+  fontshape=n,
+  formatcom=\color{blue}
+}
+\RecustomVerbatimEnvironment{Soutput}{Verbatim}{
+  xleftmargin=2em
+}
+
+\title{OmicNavigator API}
+\author{John Blischak}
+\date{\today{} \hfill OmicNavigator \Sexpr{packageVersion("OmicNavigator")}}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+\maketitle
+\tableofcontents
+
+<<setup, echo=FALSE>>=
+if (!interactive()) options(prompt = " ", continue = " ", width = 70)
+@
+
+\section{Introduction}
+
+The OmicNavigator Web App is deployed via
+\href{https://www.opencpu.org/}{OpenCPU}. Below are example calls to the
+available endpoints for retrieving data or plots from installed study
+packages. For more details on each function, please see their individual man
+pages, which you can access by running \texttt{?nameOfFunction} in the R
+console. The example below displays the endpoints directly called in the R
+console and exported as JSON. However, note that the
+\href{https://www.opencpu.org/api.html}{OpenCPU API} is very flexible. You can
+query the API endpoints using the
+\href{https://www.opencpu.org/jslib.html}{JavaScript client library} (which is
+what the OmicNavigator Web App uses) or any HTTP client you prefer. And you
+aren't limited to JSON output, but can choose one of the many available
+\href{https://www.opencpu.org/api.html#api-formats}{output formats}. For
+example, the \texttt{curl} command below downloads a results table to a CSV
+file from a hypothetical study package from OpenCPU running on the local
+machine.
+
+\begin{verbatim}
+curl http://localhost:5656/ocpu/library/OmicNavigator/R/getResultsTable/csv \
+  -d 'study="studyABC"&modelID="model_01"&testID="test_01"' \
+  > results.csv
+\end{verbatim}
+
+If OmicNavigator is deployed on an external server, replace
+\texttt{http://localhost:5656} with the server's URL. For more information on
+the benefits and features of sharing and retrieving data via the OpenCPU API,
+please see the blog post
+\href{https://www.opencpu.org/posts/publishing-data-with-opencpu/}{Publishing
+dynamic data on ocpu.io}.
+
+<<packages>>=
+library(jsonlite)
+library(OmicNavigator)
+@
+
+<<test-data, echo=FALSE>>=
+.tmplib <- tempfile()
+local({
+  dir.create(.tmplib)
+  .libPaths(c(.tmplib, .libPaths()))
+  abc <- OmicNavigator:::testStudy(name = "ABC")
+  plots <- OmicNavigator:::testPlots()
+  abc <- addPlots(abc, plots)
+  # Add a report file
+  tmpReport <- tempfile(fileext = ".html")
+  writeLines("<p>example</p>", tmpReport)
+  abc <- addReports(abc, list(model_02 = tmpReport))
+  OmicNavigator::installStudy(abc)
+})
+@
+
+\section{List studies}
+\label{sec:list-studies}
+
+List all the available studies along with their models, tests, annotations, and
+plots.
+
+<<list-studies, eval=FALSE>>=
+studies <- listStudies()
+@
+
+<<list-studies-hidden, echo=FALSE>>=
+studies <- listStudies(libraries = .tmplib)
+@
+
+<<list-studies-json>>=
+toJSON(studies, auto_unbox = TRUE, pretty = TRUE)
+@
+
+\section{Results table}
+\label{sec:results-table}
+
+For a given study, model, and test, return a table that contains the feature
+metadata and the inference results.
+
+The column names are chosen by the user. The first column is the unique
+featureID used in the study. It should be passed to
+\texttt{plotStudy()} (Section \ref{sec:custom-plots}) to create any custom plots. All the feature
+metadata columns are returned as character strings, even if they appear numeric.
+
+<<results-table>>=
+resultsTable <- getResultsTable(
+  study = "ABC",
+  modelID = "model_01",
+  testID = "test_01"
+)
+toJSON(resultsTable[1:2, ], pretty = TRUE)
+@
+
+\section{Enrichments table}
+\label{sec:enrichments-table}
+
+For a given study, model, and annotation, return a table that contains the
+enrichment results. The default is to return the nominal statistical values.
+
+<<enrichments-table>>=
+enrichmentsTable <- getEnrichmentsTable(
+  study = "ABC",
+  modelID = "model_01",
+  annotationID = "annotation_01"
+)
+toJSON(enrichmentsTable[1:2, ], pretty = TRUE)
+@
+
+Set \texttt{type = "adjusted"} to obtain statistical values adjusted for
+multiple testing.
+
+<<enrichments-table-adjusted>>=
+enrichmentsTable <- getEnrichmentsTable(
+  study = "ABC",
+  modelID = "model_01",
+  annotationID = "annotation_01",
+  type = "adjusted"
+)
+toJSON(enrichmentsTable[1:2, ], pretty = TRUE)
+@
+
+The first two columns are always \texttt{termID} and \texttt{description}. The
+remaining columns are the names of the tests defined by the user. The column
+\texttt{termID} is used to create the barcode plot (Section
+\ref{sec:barcode}).
+
+\section{Enrichments network}
+
+For a given study, model, and annotation, return the nodes and links of the
+network graph.
+
+<<enrichments-network>>=
+enrichmentsNetwork <- getEnrichmentsNetwork(
+  study = "ABC",
+  modelID = "model_01",
+  annotationID = "annotation_01"
+)
+enrichmentsNetworkMinimal <- list(
+  tests = enrichmentsNetwork[["tests"]],
+  nodes = enrichmentsNetwork[["nodes"]][1:3, ],
+  links = enrichmentsNetwork[["links"]][1:3, ]
+)
+toJSON(enrichmentsNetworkMinimal, auto_unbox = TRUE, pretty = TRUE)
+@
+
+\section{Features in a network node}
+
+For a given study, annotation, and term, return the features in that term.
+
+<<getNodeFeatures>>=
+nodeFeatures <- getNodeFeatures(
+  study = "ABC",
+  annotationID = "annotation_01",
+  termID = "term_01"
+)
+toJSON(nodeFeatures[1:4], pretty = TRUE)
+@
+
+\section{Features in a network link}
+
+For a given study, annotation, and two terms, return the features shared by the
+terms.
+
+<<getLinkFeatures>>=
+linkFeatures <- getLinkFeatures(
+  study = "ABC",
+  annotationID = "annotation_01",
+  termID1 = "term_01",
+  termID2 = "term_03"
+)
+toJSON(linkFeatures[1:4], pretty = TRUE)
+@
+
+\section{Custom plots}
+\label{sec:custom-plots}
+
+Display the custom plots provided by the user with \texttt{plotStudy()}. Provided a
+study, model, feature, and plot, \texttt{plotStudy()} generates the custom plot.
+
+The featureID is obtained from the first column returned by
+\texttt{getResultsTable()} (Section \ref{sec:results-table}). The remaining arguments
+are obtained from the output from \texttt{listStudies()}
+(Section \ref{sec:list-studies}).
+
+<<plotStudy-plotBase, fig=TRUE>>=
+plotStudy(
+  study = "ABC",
+  modelID = "model_01",
+  featureID = "feature_0001",
+  plotID = "plotBase"
+)
+@
+
+<<plotStudy-plotGg, fig=TRUE>>=
+plotStudy(
+  study = "ABC",
+  modelID = "model_03",
+  featureID = "feature_0001",
+  plotID = "plotGg"
+)
+@
+
+The study can also provide ``multiFeature'' plots, which accept more than one
+featureID. These can be distinguished from ``singleFeature'' plots via the
+field \texttt{plotType} in the output from \texttt{listStudies()} (Section
+\ref{sec:list-studies}).
+
+<<plotStudy-plotMultiFeature, fig=TRUE>>=
+plotStudy(
+  study = "ABC",
+  modelID = "model_01",
+  featureID = c("feature_0001", "feature_0002"),
+  plotID = "plotMultiFeature"
+)
+@
+
+\section{Results intersection}
+\label{sec:results-intersection}
+
+For a given study and model, filter the inference results table by the values of
+specific columns in any test of that model. Use
+\texttt{getUpsetCols()} (Section \ref{sec:upset-columns}) to obtain the common columns across all tests
+of the model.
+
+<<getResultsIntersection>>=
+resultsIntersection <- getResultsIntersection(
+  study = "ABC",
+  modelID = "model_01",
+  anchor = "test_01",
+  mustTests = c("test_01", "test_02"),
+  notTests = c(),
+  sigValue = .5,
+  operator = "<",
+  column = "p_val"
+)
+toJSON(resultsIntersection[1:2, ], pretty = TRUE)
+@
+
+\section{Enrichments intersection}
+
+For a given study and model, filter the enrichments table (or network) by the
+results of the enrichment tests.
+
+<<getEnrichmentsIntersection>>=
+enrichmentsIntersection <- getEnrichmentsIntersection(
+  study = "ABC",
+  modelID = "model_01",
+  annotationID = "annotation_01",
+  mustTests = c("test_01", "test_02"),
+  notTests = c(),
+  sigValue = .5,
+  operator = "<",
+  type = "nominal"
+)
+toJSON(enrichmentsIntersection[1:2, ], pretty = TRUE)
+@
+
+\section{Results UpSet plot}
+
+<<getResultsUpset, fig=TRUE>>=
+resultsUpset <- getResultsUpset(
+  study = "ABC",
+  modelID = "model_01",
+  sigValue = .5,
+  operator = "<",
+  column = "p_val"
+)
+@
+
+\section{Enrichments UpSet plot}
+
+<<getEnrichmentsUpset, fig=TRUE>>=
+enrichmentsUpset <- getEnrichmentsUpset(
+  study = "ABC",
+  modelID = "model_01",
+  annotationID = "annotation_02",
+  sigValue = .05,
+  operator = "<",
+  type = "nominal"
+)
+@
+
+\section{UpSet columns}
+\label{sec:upset-columns}
+
+Given a study and model, \texttt{getUpsetCols()} returns the columns common across all
+the available tests, and thus are available for filtering with
+\texttt{getResultsIntersection()} (Section \ref{sec:results-intersection}).
+
+<<getUpsetCols>>=
+upsetCols <- getUpsetCols(
+  study = "ABC",
+  modelID = "model_01"
+)
+toJSON(upsetCols, auto_unbox = TRUE, pretty = TRUE)
+@
+
+\section{metaFeatures table}
+\label{sec:metaFeatures-table}
+
+For a given study, model, and featureID, return a table that contains the metaFeatures
+associated with that featureID.
+
+<<metaFeatures-table>>=
+metaFeaturesTable <- getMetaFeaturesTable(
+  study = "ABC",
+  modelID = "model_01",
+  featureID = "feature_0001"
+)
+toJSON(metaFeaturesTable[1:2, ], pretty = TRUE)
+@
+
+\section{Barcode}
+\label{sec:barcode}
+
+Given a study, model, test, annotation, and term, \texttt{getBarcodeData()}
+returns the data required to create the barcode and violin plots.
+
+The \texttt{termID} is obtained from \texttt{getEnrichmentsTable()} (Section
+\ref{sec:enrichments-table}). The remaining arguments are obtained from the
+output from \texttt{listStudies()} (Section \ref{sec:list-studies}).
+
+The elements of the \texttt{data} array are sorted by the value of \texttt{statistic} (highest
+to lowest).
+
+<<getBarcodeData>>=
+barcodeData <- getBarcodeData(
+  study = "ABC",
+  modelID = "model_01",
+  testID = "test_01",
+  annotationID = "annotation_02",
+  termID = "term_05"
+)
+toJSON(barcodeData, auto_unbox = TRUE, pretty = TRUE)
+@
+
+\section{Reports}
+\label{sec:reports}
+
+Given a study and model, \texttt{getReportLink()} returns a link to a report file. This
+can either be a URL or a path to a file installed in a study package.
+
+<<getReportLink-URL>>=
+reportLink <- getReportLink(
+  study = "ABC",
+  modelID = "model_01"
+)
+toJSON(reportLink, auto_unbox = TRUE, pretty = TRUE)
+@
+
+<<getReportLink-file>>=
+reportLink <- getReportLink(
+  study = "ABC",
+  modelID = "model_02"
+)
+toJSON(reportLink, auto_unbox = TRUE, pretty = TRUE)
+@
+
+\section{Linkouts in results table}
+\label{sec:results-linkouts}
+
+Given a study and model, \texttt{getResultsLinkouts()} returns one or more URL
+patterns that provide linkouts to external resources. The fields refer to
+columns in the results table returned by \texttt{getResultsTable()} (Section
+\ref{sec:results-table}). The value of the column in each row should be
+concatenated to the end of the URL pattern to form each linkout.
+
+<<getResultsLinkouts>>=
+resultsLinkouts <- getResultsLinkouts(
+  study = "ABC",
+  modelID = "model_01"
+)
+toJSON(resultsLinkouts, auto_unbox = TRUE, pretty = 2)
+@
+
+Note that if you automatically unbox single strings in the JSON response, then
+the results for each column may be a string or an array of strings depending
+on whether there are one or more linkouts.
+
+\section{Linkouts in enrichments table}
+\label{sec:enrichments-linkouts}
+
+Given a study and annotationID, \texttt{getEnrichmentsLinkouts()} returns one
+or more URL patterns that provide linkouts to external resources. The value of
+the column \texttt{termID} in each row should be concatenated to the end of
+the URL pattern to form each linkout.
+
+<<getEnrichmentsLinkouts>>=
+enrichmentsLinkouts <- getEnrichmentsLinkouts(
+  study = "ABC",
+  annotationID = "annotation_01"
+)
+toJSON(enrichmentsLinkouts, auto_unbox = TRUE, pretty = 2)
+@
+
+Note that if you automatically unbox single strings in the JSON response, then
+the results for each annotationID may be a string or an array of strings
+depending on whether there are one or more linkouts.
+
+<<getEnrichmentsLinkouts-2>>=
+enrichmentsLinkouts <- getEnrichmentsLinkouts(
+  study = "ABC",
+  annotationID = "annotation_03"
+)
+toJSON(enrichmentsLinkouts, auto_unbox = TRUE, pretty = TRUE)
+@
+
+\section{Linkouts in metaFeatures table}
+\label{sec:metaFeatures-linkouts}
+
+Given a study and model, \texttt{getMetaFeaturesLinkouts()} returns one or
+more URL patterns that provide linkouts to external resources. The fields
+refer to columns in the metaFeatures table returned by
+\texttt{getMetaFeaturesTable()} (Section \ref{sec:metaFeatures-table}). The
+value of the column in each row should be concatenated to the end of the URL
+pattern to form each linkout.
+
+<<getMetaFeaturesLinkouts>>=
+metaFeaturesLinkouts <- getMetaFeaturesLinkouts(
+  study = "ABC",
+  modelID = "model_01"
+)
+toJSON(metaFeaturesLinkouts, auto_unbox = TRUE, pretty = 2)
+@
+
+Note that if you automatically unbox single strings in the JSON response, then
+the results for each column may be a string or an array of strings depending
+on whether there are one or more linkouts.
+
+\section{Favicons for table linkouts}
+\label{sec:favicons}
+
+To enhance the display of the table linkouts, \texttt{getFavicons()} returns
+the URL to the favicon for each linkout. You can pass the result from
+\texttt{getResultsLinkouts()}, \texttt{getEnrichmentsLinkouts()}, or
+\texttt{getMetaFeaturesLinkouts()}.
+
+<<getFavicons>>=
+resultsFavicons <- getFavicons(linkouts = resultsLinkouts)
+toJSON(resultsFavicons, auto_unbox = TRUE, pretty = 2)
+enrichmentsFavicons <- getFavicons(linkouts = enrichmentsLinkouts)
+toJSON(enrichmentsFavicons, auto_unbox = TRUE, pretty = 2)
+@
+
+\begin{framed}
+\textbf{Troubleshooting:} If you receive an error message from R about
+``unused arguments'', this is likely because you passed the object directly to
+the OpenCPU call. Instead the entire object needs to be wrapped inside of an
+outer object and named \texttt{linkouts}.
+\end{framed}
+
+\section{Unavailable data}
+\label{sec:unavailable-data}
+
+If a requested data resource is unavailable, an empty array is returned.
+
+<<unavailable-data>>=
+toJSON(getResultsTable(study = "ABC", modelID = "?", testID = "?"))
+toJSON(getEnrichmentsTable(study = "ABC", modelID = "?", annotationID = "?"))
+toJSON(getEnrichmentsNetwork(study = "ABC", modelID = "?", annotationID = "?"))
+toJSON(getNodeFeatures(study = "ABC", annotationID = "?", termID = "?"))
+toJSON(getLinkFeatures(study = "ABC", annotationID = "?", termID1 = "?",
+                       termID2 = "?"))
+toJSON(getUpsetCols(study = "ABC", modelID = "?"))
+toJSON(getMetaFeaturesTable(study = "ABC", modelID = "?", featureID = "?"))
+toJSON(getBarcodeData(study = "ABC", modelID = "?", testID = "?",
+                      annotationID = "?", termID = "?"))
+# Elements that have a value defined for the special modelID "default" will
+# return this value if the modelID cannot be found. Otherwise an empty array
+# would have been returned.
+toJSON(getReportLink(study = "ABC", modelID = "?"),
+       auto_unbox = TRUE, pretty = TRUE)
+toJSON(getResultsLinkouts(study = "ABC", modelID = "?"),
+       auto_unbox = TRUE, pretty = 2)
+toJSON(getEnrichmentsLinkouts(study = "ABC", annotationID = "?"))
+@
+
+\section{Package version}
+\label{sec:package-version}
+
+To obtain the current installed version of the OmicNavigator R package, call the
+function \texttt{getPackageVersion()} with no arguments.
+
+<<getPackageVersion>>=
+toJSON(getPackageVersion(), auto_unbox = TRUE)
+@
+
+\end{document}

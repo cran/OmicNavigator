@@ -1,0 +1,1402 @@
+%\VignetteIndexEntry{OmicNavigator User's Guide}
+%\VignetteEncoding{UTF-8}
+
+\documentclass[12pt, letterpaper]{article}
+
+\usepackage{fancyvrb}
+\usepackage{amsmath}
+\usepackage{float}
+\usepackage{framed}
+\usepackage[textwidth=6in]{geometry}
+\usepackage[colorlinks=true,urlcolor=blue,breaklinks]{hyperref}
+\usepackage[utf8]{inputenc}
+\usepackage{parskip} % no indentation, adds spacing between text paragraphs only
+
+\usepackage{color}
+\definecolor{blue}{rgb}{0,0,0.5}
+
+\usepackage{Sweave}
+\RecustomVerbatimEnvironment{Sinput}{Verbatim}{
+  fontshape=n,
+  formatcom=\color{blue}
+}
+
+% Hack to remove automatic title of bibliography environment
+\renewcommand{\refname}{}
+% The default is \section*{References}, which isn't numbered. Thus I manually
+% specify \section{References} to get the proper numbering, and disable the
+% automatic title.
+
+\title{OmicNavigator User's Guide}
+\author{John Blischak}
+\date{\today{} \hfill OmicNavigator \Sexpr{packageVersion("OmicNavigator")}}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE, height=4}
+\maketitle
+\tableofcontents
+
+<<setup, echo=FALSE>>=
+if (!interactive()) options(prompt = " ", continue = " ", width = 70)
+# Create temporary directory to install study "vignetteExample"
+local({
+  .tmplib <- tempfile()
+  dir.create(.tmplib)
+  .libPaths(c(.tmplib, .libPaths()))
+})
+@
+
+\section{Overview}
+\label{sec:overview}
+
+The goal of the OmicNavigator software is to facilitate the interactive
+exploration of the results from an omics experiment. Using OmicNavigator, any
+bioinformatician familiar with the basics of the R programming language can
+create and share a high-quality, comprehensive dashboard for interactive
+investigation of the patterns and signals in the data.
+
+The steps include:
+
+\begin{enumerate}
+
+  \item The bioinformatician analyzes the data from the omics experiment. This
+  can be done in R or any other platform (e.g.
+  \href{https://omicsoftdocs.github.io/ArraySuiteDoc/tutorials/ArrayStudio/ArrayStudio/}{Array
+  Studio}).
+
+  \item The bioinformatician registers the results using the OmicNavigator R
+  functions. If the results were produced outside of R, they will need to be
+  exported to files, and then imported into R.
+
+  \item The bioinformatician uses OmicNavigator to export the analysis results to
+  a study package and install it.
+
+  \item The bioinformatician can run the app locally or deploy it on a server.
+
+  \item If the app is deployed, collaborators can access the dashboard directly
+  in their web browser.
+
+\end{enumerate}
+
+\section{Structure of analysis results}
+
+Before you start registering your data with OmicNavigator, it will be helpful to
+have a high-level understanding of how OmicNavigator defines the main components
+of the analysis results and how they relate to each other.
+
+\subsection{A study and its models}
+\label{sec:overview-models}
+
+The largest unit of organization is the study. This corresponds to all the
+experiments performed and analyses conducted in order to address a scientific
+question. A study should contain all the relevant results that someone would
+need to evaluate the scientific question. In more practical terms, any
+analyses that uses overlapping biological samples should be included in the
+same study (e.g. if you measured transcript and protein levels in the same
+samples).
+
+A study has one or more models. The models can be very different (one model for
+transcript levels and another for protein levels) or very similar (same exact
+input data but differential expression performed with two different software
+packages).
+
+\begin{figure}[H]
+  \includegraphics{images/models}
+  \centering
+  \label{fig:models}
+\end{figure}
+
+\subsection{Differential expression results}
+
+One of the primary type of results that OmicNavigator displays for interactive
+investigation is the statistical results from a differential expression
+analysis. Here ``differential expression'' is broadly defined,
+e.g. this could be differential methylation or any other molecular phenotype.
+
+Each model has one or more tests. Each test (also commonly referred to as a
+\href{https://en.wikipedia.org/wiki/Contrast_(statistics)}{contrast}) refers
+to the statistical results from testing a single coefficient (or a combination
+of coefficients) from the model.
+
+For example, a model that compares cases versus controls will only have one
+test:
+
+\begin{figure}[H]
+  \includegraphics{images/results-1}
+  \centering
+  \label{fig:results-1}
+\end{figure}
+
+A model that compares a control versus two different treatments will likely have
+two tests:
+
+\begin{figure}[H]
+  \includegraphics{images/results-2}
+  \centering
+  \label{fig:results-2}
+\end{figure}
+
+And a model that compares three distinct groups will likely have 3 tests
+(since $\binom{3}{2} = 3$ pairwise comparisons):
+
+\begin{figure}[H]
+  \includegraphics{images/results-3}
+  \centering
+  \label{fig:results-3}
+\end{figure}
+
+\subsection{Enrichment analysis}
+\label{sec:overview-enrichments}
+
+A typical systems biology analysis to perform after a differential expression
+analysis is to test for enrichment of the differentially expressed features
+in terms from curated annotation databases (e.g. \href{https://www.genome.jp/kegg/}{KEGG},
+\href{https://reactome.org/}{Reactome}). The OmicNavigator app provides a
+table, network, and various other visualizations to explore the output of
+enrichment analyses.
+
+Similar to the differential expression results, enrichment analyses are also
+added per model and per test. However, there is also the additional category of
+the annotation database that was used for the enrichment (e.g. KEGG, Reactome).
+Thus each enrichments table corresponds to a given study-annotation-test
+combination.
+
+For example, imagine that enrichment analyses were performed with the KEGG and
+Reactome annotations. A model that compares cases versus controls will have
+two enrichments tables:
+
+\begin{figure}[H]
+  \includegraphics{images/enrichments-1}
+  \centering
+  \label{fig:enrichments-1}
+\end{figure}
+
+A model that compares a control versus two different treatments will have
+four enrichment tables, 2 for each of the tests:
+
+\begin{figure}[H]
+  \includegraphics{images/enrichments-2}
+  \centering
+  \label{fig:enrichments-2}
+\end{figure}
+
+And a model that compares three distinct groups will have 6 enrichment tables,
+2 for each of the 3 tests:
+
+\begin{figure}[H]
+  \includegraphics{images/enrichments-3}
+  \centering
+  \label{fig:enrichments-3}
+\end{figure}
+
+\subsection{Additional information}
+\label{sec:overview-additional}
+
+The primary data sets are the differential expression results and the enrichments
+results. However, the more information you supply about the experimental data,
+the more details will be included in the app.
+
+For example, you can include metadata about the features, metadata about the
+samples, or the individual assay measurements (expression, methylation,
+phosphorylation, etc.).
+
+This additional metadata can be added per model (e.g. different feature
+metadata for RNA versus protein measurements) or shared across models (e.g. if
+the same samples are used in each model).
+
+\section{Step-by-step example}
+\label{sec:step-by-step-example}
+
+Now it's time to convert your results into an OmicNavigator study! Below you will
+see how to:
+
+\begin{enumerate}
+
+  \item Create a new OmicNavigator study
+
+  \item Add your existing results to your OmicNavigator study
+
+  \item Install your OmicNavigator study as an R package
+
+  \item Start the app to interactively explore your results
+
+\end{enumerate}
+
+\subsection{Example data: RNAseq123}
+
+As an illustrative example, this vignette uses the results from the
+Bioconductor workflow package
+\href{https://bioconductor.org/packages/release/workflows/html/RNAseq123.html}{RNAseq123}
+\cite{RNAseq123}. It is a limma+voom analysis of RNA-seq data from 3 cell
+populations in the mouse mammary gland collected by Sheridan et al., 2015
+\cite{Sheridan2015}.
+
+The 3 cell populations are basal, luminal progenitor (LP), and mature luminal (ML).
+In the RNAseq123 analysis, the primary differential expression results obtained
+are for the tests ``Basal versus LP'' and ``Basal versus ML''. This is similar to
+the design diagrammed in Figure \ref{fig:results-2}.
+
+\begin{figure}[H]
+  \includegraphics{images/results-rna}
+  \centering
+  \label{fig:results-rna}
+\end{figure}
+
+Furthermore they performed enrichment analysis with one annotation database:
+the Broad Institute's MSigDB c2 collection, which was converted converted
+from human to mouse gene identifiers by
+\href{http://bioinf.wehi.edu.au/software/MSigDB/}{WEHI Bioinformatics}.
+
+\begin{figure}[H]
+  \includegraphics{images/enrichments-rna}
+  \centering
+  \label{fig:enrichments-rna}
+\end{figure}
+
+To obtain the results, I ran their script
+\href{https://bioconductor.org/packages/release/workflows/vignettes/RNAseq123/inst/doc/limmaWorkflow.R}{limmaWorkflow.R}
+and saved some of the objects to use in this vignette.
+
+<<data>>=
+data("RNAseq123", package = "OmicNavigator")
+ls()
+@
+
+Furthermore, after the analysis completed using the full data, I drastically
+subset the results objects to create a minimal example. For example, it only
+contains differential expression results for \Sexpr{nrow(basal.vs.lp)}
+features and enrichment analysis results for \Sexpr{nrow(cam.BasalvsLP)}
+annotation terms.
+
+You are welcome to follow along with these example data sets if you like. However,
+the main goal of this document is for you to input your own study data into
+OmicNavigator. The particular details of this specific study are not important.
+It happens to be an RNA-seq analysis of mice that was analyzed with limma+voom,
+but none of that has to apply to your own study.
+
+\subsection{Create an OmicNavigator study}
+
+The first step is to load the OmicNavigator package into the current R
+session.\footnote{If you haven't installed OmicNavigator yet, please see the
+file \texttt{README.md} for the installation instructions.}
+
+<<package>>=
+library(OmicNavigator)
+@
+
+Next run \texttt{createStudy()} to create your OmicNavigator study object. The
+first argument is the name of the study. The second argument (optional) is a
+description of the study.
+
+<<createStudy>>=
+study <- createStudy(name = "vignetteExample",
+                     description = "Bioc workflow package RNAseq123")
+@
+
+Because the \texttt{name} will be used when naming the study package, it must
+follow these rules that apply to all R package names:
+
+\begin{itemize}
+
+  \item Begin with a letter
+
+  \item End with a letter or a number
+
+  \item Be at least two characters long
+
+  \item Only contain alphanumeric characters and periods (full stops)
+
+\end{itemize}
+
+For more details, run \texttt{?createStudy}. For example, there are additional
+optional arguments such as \texttt{version}, \texttt{maintainer}, and
+\texttt{maintainerEmail}.
+
+\subsection{Results}
+\label{sec:results}
+
+The RNAseq123 differential results were generated by the limma function
+\texttt{topTreat()}. The results for the test ``Basal versus LP'' are in
+\texttt{basal.vs.lp} and the results for ``Basal versus ML'' are in
+\texttt{basal.vs.ml}.
+
+<<>>=
+head(basal.vs.lp)
+@
+
+The first column contains the Entrez gene identifier for each gene that they
+tested. OmicNavigator refers to this primary feature identifier of the study as
+the featureID.\footnote{This example study happened to use Entrez gene
+identifiers for the featureID. You can use whichever featureID you like for
+your own study. OmicNavigator only requires that the featureID is unique per
+feature, a character vector, and used consistently between the various input
+tables.} It must be unique, i.e. there must be only one row of results per
+featureID. The second and third columns contain more information about the
+features: the gene symbol and chromosomal location, respectively. OmicNavigator
+stores feature metadata columns in a separate table, so these will be removed
+from the results table. The remaining columns contain the quantitative
+measurements from the statistical test.
+
+This table is almost ready for import into OmicNavigator. There are only two strict
+requirements for a results table:
+
+\begin{itemize}
+
+  \item The first column must be a unique character vector containing the featureID
+
+  \item The remaining columns must be numeric vectors
+
+\end{itemize}
+
+Thus I only need to remove the second and third columns which include extra
+feature metadata columns. These will be added separately as the features table
+in Section \ref{sec:features}.
+
+<<>>=
+# Remove columns 2 and 3
+basal.vs.lp.on <- basal.vs.lp[, -2:-3]
+basal.vs.ml.on <- basal.vs.ml[, -2:-3]
+head(basal.vs.ml.on)
+@
+
+\textbf{Tip:} Order the results table by statistical significance. The initial
+display of the results table in the app will be exactly as you enter the table
+in R. The users can of course manually sort the table by any of the columns,
+but it is convenient for the initial display to highlight the most
+statistically significant features. I omitted this ordering step above because
+\texttt{topTreat()} automatically sorts the features by statistical
+significance.
+
+Next I combine these two results tables. Recall from Figure
+\ref{fig:results-rna} that the results are defined for a given model and test
+combination. To represent this hierarchical relationship, OmicNavigator uses
+nested lists. Below I create a new list named \texttt{results}. Its first
+element is the name of the model, \texttt{main}, referred to as the
+\texttt{modelID}. Then I assign \texttt{main} a list where each element is the
+name of a test from that model, referred to as the \texttt{testID}. Each
+element contains the result table for that test.
+
+<<>>=
+results <- list(
+  main = list(
+    basal.vs.lp = basal.vs.lp.on,
+    basal.vs.ml = basal.vs.ml.on
+  )
+)
+@
+
+I add this to the OmicNavigator study with \texttt{addResults()}.
+
+<<>>=
+study <- addResults(study, results)
+@
+
+For more details, run \texttt{?addResults}.
+
+% I tried using \framebox{}, but this is for single lines. The framed package
+% does exactly what I wanted.
+% https://en.wikibooks.org/wiki/LaTeX/Boxes#framebox_and_fbox
+\begin{framed}
+\textbf{Important:} You can stop here! The minimal required data for a valid
+OmicNavigator study is a single results table. Any additional data you add enables
+more features in the app for exploring your study. See Section \ref{sec:mapping}
+for the mapping between data elements and app features.
+\end{framed}
+
+\subsection{Enrichments}
+\label{sec:enrichments}
+
+The RNAseq123 enrichments were generated by the limma function
+\texttt{camera()}. The results for the test ``Basal versus LP'' are in
+\texttt{cam.BasalvsLP} and the results for ``Basal versus ML'' are in
+\texttt{cam.BasalvsML}.
+
+<<>>=
+head(cam.BasalvsLP)
+@
+
+The row names contain the names of the annotation terms used in the
+enrichment analysis. OmicNavigator refers to these as the \texttt{termID}. The
+columns contain the number of genes in each term (\texttt{NGenes}), the
+direction of the enrichment (\texttt{Direction}), the nominal p-value
+(\texttt{PValue}), and the multiple-testing adjusted p-value (\texttt{FDR}).
+
+Unlike the results table, OmicNavigator has strict requirements for the names and
+contents of the enrichments table columns:
+
+\begin{enumerate}
+
+  \item \texttt{termID} - the unique identifier for each term
+
+  \item \texttt{description} - a human readable description of each term
+
+  \item \texttt{nominal} - the nominal statistical result from the enrichment test
+
+  \item \texttt{adjusted} - the statistical result adjusted for multiple testing
+
+\end{enumerate}
+
+The object returned by \texttt{camera()} contains all the required information
+except the human readable description. Below I create new data frames to store
+the enrichments tables. I perform some string processing of the
+\texttt{termID} to create the \texttt{description}. If creating a human readable
+description is too onerous, you can simply repeat the \texttt{termID} for
+this column.
+
+<<>>=
+# LP
+cam.BasalvsLP.on <- data.frame(
+  termID = row.names(cam.BasalvsLP),
+  description = gsub("_", " ", tolower(row.names(cam.BasalvsLP))),
+  nominal = cam.BasalvsLP$PValue,
+  adjusted = cam.BasalvsLP$FDR,
+  stringsAsFactors = FALSE
+)
+# ML
+cam.BasalvsML.on <- data.frame(
+  termID = row.names(cam.BasalvsML),
+  description = gsub("_", " ", tolower(row.names(cam.BasalvsML))),
+  nominal = cam.BasalvsML$PValue,
+  adjusted = cam.BasalvsML$FDR,
+  stringsAsFactors = FALSE
+)
+head(cam.BasalvsML.on)
+@
+
+Lastly I need to combine these two enrichments table. Recall from Figure
+\ref{fig:enrichments-rna} that the enrichments are defined for a given model,
+annotation, and test combination. Again a nested list is used to represent
+this hierarchical relationship. The nested list defined below,
+\texttt{enrichments}, contains 3 levels: 1) modelID, 2) annotationID, 3)
+testID.
+
+<<>>=
+enrichments <- list(
+  main = list(
+    c2 = list(
+       basal.vs.lp = cam.BasalvsLP.on,
+       basal.vs.ml = cam.BasalvsML.on
+    )
+  )
+)
+@
+
+I add this to the OmicNavigator study with \texttt{addEnrichments()}.
+
+<<>>=
+study <- addEnrichments(study, enrichments)
+@
+
+For more details, run \texttt{?addEnrichments}.
+
+\subsection{Models}
+
+You can provide more detailed descriptions of your models. These will be
+displayed in the app when a user hovers over each \texttt{modelID}. Below I
+describe the only model I currently have for this study.
+
+<<>>=
+models <- list(
+  main = "limma+voom model of RNA-seq experiment of mouse mammary glands"
+)
+@
+
+And then add it to the OmicNavigator study with \texttt{addModels}.
+
+<<>>=
+study <- addModels(study, models)
+@
+
+For more details, run \texttt{?addModels}. Importantly, note that instead of a
+only adding a single string as above, you could alternatively add a named list
+with additional metadata to describe each modelID.
+
+\subsection{Tests}
+
+You can provide more detailed descriptions of your tests. These will be
+displayed in the app when a user hovers over each \texttt{testID}. Below I
+describe the two tests that were performed for the modelID \texttt{main}. The
+input must be a nested list, similar to the input to \texttt{addResults()}. Each
+element of the top-level list is a modelID, and each element of the nested list
+is a testID. The value is a single character string that describes the test.
+
+<<>>=
+tests <- list(
+  main = list(
+    basal.vs.lp = "Which genes are DE between Basal and LP cells?",
+    basal.vs.ml = "Which genes are DE between Basal and ML cells?"
+  )
+)
+@
+
+I then add this to the OmicNavigator study with \texttt{addTests}.
+
+<<>>=
+study <- addTests(study, tests)
+@
+
+For more details, run \texttt{?addTests}. Importantly, note that instead of a
+only adding a single string as above, you could alternatively add a named list
+with additional metadata to describe each testID.
+
+\subsection{Features}
+\label{sec:features}
+
+Recall that I removed the feature metadata columns from the results tables. I
+still want to include these when exploring the results in the app. I can add
+them in the features table of OmicNavigator. The features table has the following
+requirements:
+
+\begin{itemize}
+
+  \item The first column must contain the study featureID. It must be unique,
+  and it must be a character vector. The row order doesn't have to match the
+  order in the results table(s).
+
+  \item The remaining columns must all be character vectors.
+
+\end{itemize}
+
+Thus I can take the first 3 columns of one of the objects returned by
+\texttt{topTreat()} to use as the features table for the modelID
+\texttt{main}.
+
+<<>>=
+basal.vs.lp[1:2, 1:6]
+features <- list(
+  main = basal.vs.lp[, 1:3]
+)
+@
+
+And add it to the OmicNavigator study with \texttt{addFeatures()}.
+
+<<>>=
+study <- addFeatures(study, features)
+@
+
+For more details, run \texttt{?addFeatures}.
+
+\textbf{Tip:} Be judicious in the number of columns you add to the features
+table. These will be displayed in the app next to the differential expression
+results. If you have too many features columns, they will obscure from the
+columns with the statistics.
+
+\subsection{Annotations}
+\label{sec:annotations}
+
+In addition to a table of enrichments, the app can also display a network view
+of the enrichment results. In order to do this, OmicNavigator needs more
+information about the annotation terms that were used. Each node of the
+network is a \texttt{termID} and the edges between the nodes are determined by
+the number of shared features between any two of the \texttt{termID}'s. The
+more shared features, the thicker the edge line will be.\footnote{The user of
+the app is able to choose which overlap metric to use when drawing the
+thickness of the edge lines.}
+
+The input format for the terms is a named list of character vectors. The names
+of the list are the \texttt{termID}'s. Each element is a character vector that
+contains the features in that term. Conveniently the c2 terms are already in
+this format.
+
+<<>>=
+Mm.c2
+@
+
+Recall that I purposefully subset the data to provide a minimal example for
+this User's Guide. This list only contains \Sexpr{length(Mm.c2)} terms,
+whereas the original \texttt{Mm.c2} used in the RNAseq123 analysis has
+thousands of terms.
+
+The annotations are added as a nested list. The first level is the names of the
+annotations, referred to as the \texttt{annotationID}. This must match the
+\texttt{annotationID} used when entering the enrichments tables
+(Section \ref{sec:enrichments}). The second level
+is a list that describes each annotation. In addition to the list of terms, I
+include a human readable description as well as the name of the column in the
+features table that was used in the enrichments analysis (\texttt{ENTREZID}).
+
+<<>>=
+annotations <- list(
+  c2 = list(
+    terms = Mm.c2,
+    description = "Broad Institute's MSigDB c2 collection",
+    featureID = "ENTREZID"
+  )
+)
+@
+
+If I were to perform an enrichment analysis with an annotation database that
+instead used the gene symbols in its terms, then I would set \texttt{featureID
+= "SYMBOL"}.
+
+I add it to the OmicNavigator study with \texttt{addAnnotations()}.
+
+<<>>=
+study <- addAnnotations(study, annotations)
+@
+
+For more details, run \texttt{?addAnnotations}.
+
+\subsection{Barcodes}
+\label{sec:barcodes}
+
+The app can create an interactive barcode plot\footnote{If you're unfamiliar
+with barcode plots, check out the function \texttt{barcodeplot()} from the
+Bioconductor package \href{https://bioconductor.org/packages/limma/}{limma}.}
+to display the enrichments results for a given termID. In order to enable this
+view, you first need to add some information about how to construct the
+barcode plot.
+
+The barcode plot displays the magnitude of the differential expression statistic
+for all of the features contained in a given termID. In a differential
+expression analysis, this is typically a t-statistic or F-statistic. Since the
+columns of the results table can be named anything you like, OmicNavigator
+doesn't know which column to use.
+
+In the RNAseq123 example, the test statistic is in the column \texttt{t}.
+
+<<>>=
+head(basal.vs.lp.on)
+@
+
+In addition to specifying which column to use for the statistic in the barcode
+plot, you can provide other optional values to customize the appearance of the
+plot. All of the possible fields are listed below.
+
+\begin{itemize}
+
+  \item \texttt{statistic} (required) - The column name in the results table
+  to use to construct the barcode plot.
+
+  \item \texttt{absolute} (optional) - Convert the statistic to its absolute
+  value (default is \texttt{TRUE}).
+
+  \item \texttt{logFoldChange} (optional) - The column name in the results
+  table that contains the log fold change values. This is used to create an
+  additional view containing a violin plot.
+
+  \item \texttt{labelStat} (optional) - The x-axis label to describe the
+  statistic.
+
+  \item \texttt{labelLow} (optional) - The left-side label to describe low
+  values of the statistic.
+
+  \item \texttt{labelHigh} (optional) - The right-side label to describe high
+  values of the statistic.
+
+  \item \texttt{featureDisplay} (optional) - The feature variable to use to
+  label the barcode plot on hover. This is a column name from the features
+  table.
+
+\end{itemize}
+
+Below I customize the barcode plot for the RNAseq123 example. I specify that
+the test statistics are in the column \texttt{t} in the results table, the log
+fold change values are in the column \texttt{logFC}, the x-axis is labeled as
+\texttt{"abs(t)"}, and the ID that is displayed when hovering over a line in the
+barcode plot is the column \texttt{SYMBOL} from the features table.\footnote{The
+default is the featureID, in this case the Entrez ID.} This is contained in a
+nested list applied to the modelID \texttt{main}, and I add the information to
+the study with \texttt{addBarcodes()}.
+
+<<>>=
+barcodes <- list(
+  main = list(
+    statistic = "t",
+    logFoldChange = "logFC",
+    labelStat = "abs(t)",
+    featureDisplay = "SYMBOL"
+  )
+)
+
+study <- addBarcodes(study, barcodes)
+@
+
+For more details, run \texttt{?addBarcodes}.
+
+\subsection{Install the study}
+
+Now I can install the study as an R package with \texttt{installStudy()}.
+
+<<install, eval=TRUE>>=
+installStudy(study)
+@
+
+If I needed to transfer the study package to a different machine, instead of
+directly installing it, I could export it as a package tarball with
+\texttt{exportStudy()}.
+
+<<export, eval=FALSE>>=
+exportStudy(study)
+@
+
+Then after I moved the study package tarball to another machine (or shared it
+with a colleague), the study package could be installed with
+\texttt{install.packages()}. For example, the example study from this vignette
+could be installed with the following command.
+
+<<install-tarball, eval=FALSE>>=
+install.packages("ONstudyvignetteExample_0.0.0.9000.tar.gz",
+                 repos = NULL)
+@
+
+To remove an installed study package, see \texttt{?removeStudy}.
+
+\subsection{Run the app locally}
+
+After the study package is installed, I can run \texttt{startApp()} to open
+the app in the browser. If the study package was properly installed, I should
+be able to select it from the app's menu. Note that the app can't be run from
+within RStudio Server.
+
+<<startApp, eval=FALSE>>=
+startApp()
+@
+
+When I'm finished exploring the results in the app, I can stop the web server
+by returning to the R console and pressing the Esc key (Windows) or Ctrl-C
+(Linux, macOS).
+
+\section{Custom plots}
+\label{sec:create-custom-plots}
+
+You can create custom plots to visualize the expression pattern of individual
+features in the experiment. These will be displayed in the app when a user
+clicks on a specific feature. In order for the app to be able to plot your
+data, you first need to add information on the samples and assay measurements
+from the experiment.
+
+\subsection{Samples}
+\label{sec:samples}
+
+You can add a table with metadata about the samples in your study, e.g. a
+column to indicate ``treatment'' versus ``control'' samples. These sample
+metadata columns will be made available to your custom plotting functions
+(more on that below in Section \ref{sec:create-custom-plots}). The samples
+table must be a data frame that follows these requirements:
+
+\begin{itemize}
+
+  \item The first column must contain the study sampleID. It must be unique,
+  and it must be a character vector.
+
+\end{itemize}
+
+In the RNAseq123 analysis, the sampleID is in the vector \texttt{samplenames}.
+The two sample metadata variables for the experiment are \texttt{group} (the
+type of cell) and \texttt{lane} (the lane the sample was sequenced on).
+
+<<>>=
+head(samplenames)
+table(group)
+table(lane)
+@
+
+I combine these 3 vectors into a data frame.
+
+<<>>=
+samplesTable <- data.frame(name = samplenames, group, lane)
+head(samplesTable)
+@
+
+And I assign the table to the modelID \texttt{main} and add it to my
+OmicNavigator study.
+
+<<>>=
+samples <- list(main = samplesTable)
+study <- addSamples(study, samples)
+@
+
+For more details, run \texttt{?addSamples}.
+
+\subsection{Assays}
+\label{sec:assays}
+
+In order to visualize the expression levels, I need to add these assay
+measurements to the OmicNavigator study. The assays table is a data frame with
+the following requirements:
+
+\begin{itemize}
+
+  \item The row names should match the featureIDs in the first column of the
+  features table (order doesn't matter)
+
+  \item The column names should match the sampleIDs in the first column of
+  the samples table (order doesn't matter)
+
+  \item The columns should all be numeric
+
+\end{itemize}
+
+The measurements you add should be ready to plot. In other words, you don't
+want to perform data cleaning steps like filtering and normalizing each time a
+plot needs to be made. In the RNAseq123 example, I don't want to add the raw
+counts. Instead I add the filtered, normalized, log-transformed counts per
+million (CPM) contained in the matrix \texttt{lcpm}.
+
+<<>>=
+lcpm[1:3, 1:3]
+@
+
+Since the row and column names already use the study's featureID and sampleID,
+respectively, all I have to do is convert it to a data frame.
+
+<<>>=
+assays <- list(main = as.data.frame(lcpm))
+study <- addAssays(study, assays)
+@
+
+For more details, run \texttt{?addAssays}.
+
+\subsection{Plots}
+\label{sec:plots}
+
+The app will call all custom plotting functions by passing a list with the
+filtered data to the first argument. The name of the argument can be whatever
+you like. An example is below.
+
+<<eval=FALSE>>=
+nameOfPlot <- function(x) {
+  # Your custom plotting code
+}
+@
+
+The input list that will be passed to your custom plotting function has the
+following elements:
+
+\begin{enumerate}
+
+  \item \texttt{assays} - A data frame that contains the assay measurements,
+  filtered to only include the row(s) corresponding to the input featureID(s).
+  If multiple featureIDs are requested, the rows are reordered to match the
+  order of this input. The column order is unchanged.
+
+  \item \texttt{samples} - A data frame that contains the sample metadata for
+  the given modelID. The rows are reordered to match the columns of the assays
+  data frame.
+
+  \item \texttt{features} - A data frame that contains the feature metadata,
+  filtered to only include the row(s) corresponding to the input featureID(s).
+  If multiple featureIDs are requested, the rows are reordered to match the
+  order of this input (and thus match the order of the assays data frame).
+
+\end{enumerate}
+
+When creating your custom plotting function, you don't need to create this
+list of data frames manually. Instead, you can use the same function that
+OmicNavigator uses internally, \texttt{getPlottingData()}. The code below
+obtains the input list that will be passed to the custom plotting functions
+when an app user selects the featureID \texttt{"12767"}. Note how both the
+assays and features data frames only contain one row each.
+
+<<>>=
+plottingData <- getPlottingData(study, modelID = "main", featureID = "12767")
+plottingData
+@
+
+Using this object, I create a boxplot to visualize the gene expression
+levels per cell type.
+
+<<cellTypeBox, fig=TRUE>>=
+boxplot(as.numeric(plottingData$assays[1, ]) ~ plottingData$samples$group,
+        col = c("pink", "purple", "gold"),
+        xlab = "Cell type", ylab = "Gene expression",
+        main = plottingData$features$SYMBOL)
+@
+
+Once I am satisfied with the appearance of the plot, I can convert it to a
+function that accepts one argument \texttt{plottingData} (reminder: you can
+name the argument however you like, as long as you refer to it consistently in
+the body of your function).
+
+<<>>=
+cellTypeBox <- function(plottingData) {
+  boxplot(as.numeric(plottingData$assays[1, ]) ~ plottingData$samples$group,
+          col = c("pink", "purple", "gold"),
+          xlab = "Cell type", ylab = "Gene expression",
+          main = plottingData$features$SYMBOL)
+}
+@
+
+The process is similar for creating a plot with the package ggplot2. However,
+since these custom plotting functions will be added to an R package, you have
+to be slightly more careful. Also note that I have to combine the assays and
+samples tables to create the input data frame required by ggplot2.
+
+<<cellTypeBoxGg, fig=TRUE>>=
+library(ggplot2)
+ggDataFrame <- cbind(plottingData$samples,
+                     feature = as.numeric(plottingData$assays))
+head(ggDataFrame, 3)
+ggplot(ggDataFrame, aes(x = group, y = feature, fill = group)) +
+  geom_boxplot() +
+  scale_fill_manual("Cell type", values = c("pink", "purple", "gold")) +
+  labs(x = "Cell type", y = "Gene expression",
+       title = plottingData$features$SYMBOL)
+@
+
+When I convert my ggplot2 plot to a function, I need to preface all the
+references to the columns of the data frame with \texttt{.data\$}. This is
+required for properly resolving these variables when the function is called
+from within a package. If you're interested in learning more, see the ggplot2
+vignette
+\href{https://ggplot2.tidyverse.org/articles/ggplot2-in-packages.html#using-aes-and-vars-in-a-package-function-1}{Using
+ggplot2 in packages}. Also note that you do \textbf{not} need to load the
+ggplot2 package inside the function. You will declare the required package
+dependencies when you add the custom plots to the OmicNavigator study.
+
+<<>>=
+cellTypeBoxGg <- function(plottingData) {
+  ggDataFrame <- cbind(plottingData$samples,
+                       feature = as.numeric(plottingData$assays))
+
+  ggplot(ggDataFrame, aes(x = .data$group, y = .data$feature, fill = .data$group)) +
+    geom_boxplot() +
+    scale_fill_manual("Cell type", values = c("pink", "purple", "gold")) +
+    labs(x = "Cell type", y = "Gene expression",
+         title = plottingData$features$SYMBOL)
+}
+@
+
+The above plots visualize one gene at a time. I can also create custom
+plotting functions that accept multiple featureIDs as input, which
+OmicNavigator refers to as ``multiFeature'' plots. An app user can dynamically
+select a subset of featureIDs, and these will be passed to your function.
+Below I create an example plotting function that performs PCA using a subset
+of featureIDs.
+
+<<multiFeature, fig=TRUE>>=
+twoFeatures <- getPlottingData(study, modelID = "main",
+                               featureID = c("12767", "13603"))
+twoFeatures
+plotPca <- function(x) {
+  if (nrow(x[["assays"]]) < 2) {
+    stop("This plotting function requires at least 2 features")
+  }
+  pca <- stats::prcomp(t(x[["assays"]]), scale. = TRUE)$x
+  plot(pca[, 1], pca[, 2], col = as.factor(x$samples$group),
+       xlab = "PC 1", ylab = "PC 2", main = "PCA")
+  text(pca[, 1], pca[, 2], labels = x$samples$group, pos = 2, cex = 0.5)
+}
+plotPca(twoFeatures)
+@
+
+Now that I've created three custom plots for use in the app, I compile them
+into a nested list and add them to the OmicNavigator study. The nested list
+has three levels. The first is the modelIDs, in this case \texttt{main}. The
+second is the name of the custom plotting functions as they were defined in
+the current R session, \texttt{cellTypeBox}, \texttt{cellTypeBoxGg}, and
+\texttt{plotPca}. The third is information about the custom plotting function.
+The only required element is \texttt{displayName}, which is the text that will
+be displayed in the app. You are encouraged to also specify the
+\texttt{plotType}, e.g. \texttt{"singleFeature"}, \texttt{"multiFeature"}. If
+you do not specify the \texttt{plotType}, the plot will be assumed to be
+\texttt{"singleFeature"}. An optional element is \texttt{packages}, in which
+you list any R packages that are required for the plotting function to work.
+OmicNavigator uses this information to properly construct the study package it
+creates.
+
+<<>>=
+plots <- list(
+  main = list(
+    cellTypeBox = list(
+      displayName = "Expression by cell type",
+      plotType = "singleFeature"
+    ),
+    cellTypeBoxGg = list(
+      displayName = "Expression by cell type (ggplot2)",
+      plotType = "singleFeature",
+      packages = c("ggplot2")
+    ),
+    plotPca = list(
+      displayName = "PCA",
+      plotType = "multiFeature",
+      packages = c("stats")
+    )
+  )
+)
+study <- addPlots(study, plots = plots)
+@
+
+For more details, run \texttt{?addPlots}.
+
+After you add the plotting functions, you can test that they work as you expect
+using the same function called by the app, \texttt{plotStudy()}. Below I call
+both custom ``singleFeature'' functions using featureID 21390.
+
+<<plotStudy1, fig=TRUE>>=
+plotStudy(study, modelID = "main", featureID = "21390",
+          plotID = "cellTypeBox")
+@
+
+<<plotStudy2, fig=TRUE>>=
+plotStudy(study, modelID = "main", featureID = "21390",
+          plotID = "cellTypeBoxGg")
+@
+
+And I can test the ``multiFeature'' function by passing it multiple featureIDs.
+
+<<plotStudy3, fig=TRUE>>=
+plotStudy(study, modelID = "main", featureID = c("21390", "19216"),
+          plotID = "plotPca")
+@
+
+To make the custom plotting functions available in the app, re-install the study
+package with \texttt{installStudy()}.
+
+\section{Extras}
+
+I didn't include every possible addition in Section
+\ref{sec:step-by-step-example} above. Below are some extras you can also
+include in your study package. Similar to many of the other elements, these
+are purely optional. They are available to enhance your study package if you
+want them. After adding any of these extra elements, remember to re-install
+the study package with \texttt{installStudy()} for the changes to take effect
+in the app.
+
+\subsection{MetaFeatures}
+\label{sec:metaFeatures}
+
+The features tables explained in Section \ref{sec:features} require that the
+first column containing the study featureID is unique. This enforces a 1:1
+mapping between the featureID and the other columns. In general this works
+well; however, it doesn't handle the case where a given featureID may map to
+multiple other values of a different variable. For example, each Entrez gene
+ID used in the RNAseq123 study may map to 0, 1, or more Ensembl gene IDs.
+While you could cram the multiple values into one column using a separator
+like a semi-colon, this is discouraged since it will not display nicely in the
+app's table. Instead you can add a metaFeatures table, which is a catch-all
+for any information about the features that doesn't map 1:1.
+
+The metaFeatures table has the following requirements:
+
+\begin{itemize}
+
+  \item The first column must contain the featureID. Each featureID must also
+  be included in the corresponding features table. Not every featureID has to
+  be included, the order does not matter, and it is expected that the
+  featureIDs will be repeated.
+
+  \item The remaining columns must be character vectors.
+
+\end{itemize}
+
+Adding the metaFeatures table is similar to the features table. Use a nested
+list to assign the table(s) to a modelID, then use \texttt{addMetaFeatures()}.
+For more details, run \texttt{?addMetaFeatures}.
+
+\subsection{Reports}
+
+Some users of the app may be interested in learning more of the details of the
+analysis. If you created a report of your analysis, you can add this to your
+OmicNavigator study. Then it will be available for interested users. The report
+can be any file format. You need to provide a path to the file on your local
+machine (in which case it will be bundled into the study package), or you can
+provide a URL that points to the file.
+
+In this case, the
+\href{https://bioconductor.org/packages/release/workflows/vignettes/RNAseq123/inst/doc/limmaWorkflow.html}{RNAseq123
+analysis report} is hosted on Bioconductor's website. Below I purposefully use a
+small text size in order to display the full URL.
+
+\begin{scriptsize}
+
+<<>>=
+reportUrl = "https://bioconductor.org/packages/release/workflows/vignettes/RNAseq123/inst/doc/limmaWorkflow.html"
+@
+
+\end{scriptsize}
+
+As usual, I create a nested list with one entry per \texttt{modelID}.
+
+<<>>=
+reports <- list(
+  main = reportUrl
+)
+@
+
+And add it to the OmicNavigator study with \texttt{addReports()}.
+
+<<>>=
+study <- addReports(study, reports)
+@
+
+For more details, run \texttt{?addReports}.
+
+\subsection{Results table linkouts}
+\label{sec:resultsLinkouts}
+
+You can provide linkouts to external resources for the features in your study.
+These linkouts are embedded directly into the results table (Section
+\ref{sec:results}). The linkout URLs can use the featureID or any of the
+columns in the optional features table (Section \ref{sec:features}).
+
+For example, to provide a linkout for each Entrez ID in the RNAseq123 study, I
+can use the linkout pattern \url{https://www.ncbi.nlm.nih.gov/gene/}. The
+Entrez ID in each row will be appended to the linkout pattern to create the
+valid URL, e.g. \url{https://www.ncbi.nlm.nih.gov/gene/242505}. Below I create
+a list with this linkout. I use the special modelID ``default'' so that the
+linkouts are added to the results table for every modelID. The name of the
+nested list is \texttt{ENTREZID} because that is the name of the column.
+
+<<resultsLinkouts>>=
+resultsLinkouts <- list(
+  default = list(
+    ENTREZID = "https://www.ncbi.nlm.nih.gov/gene/"
+  )
+)
+@
+
+Then I add the results linkouts to the study.
+
+<<addResultsLinkouts>>=
+study <- addResultsLinkouts(study, resultsLinkouts)
+@
+
+For more details, run \texttt{?addResultsLinkouts}.
+
+\subsection{Enrichments table linkouts}
+\label{sec:enrichmentsLinkouts}
+
+You can provide linkouts to external resources for the annotation terms used
+for your enrichment analyses. These linkouts are embedded directly into the
+termID column of the enrichments table (Section \ref{sec:enrichments}).
+
+For example, to provide a linkout for each termID for the annotation c2 in the
+RNAseq123 study, I can use the linkout pattern
+\url{https://www.gsea-msigdb.org/gsea/msigdb/cards/}. The termID in each row
+will be appended to the linkout pattern to create the valid URL, e.g.
+\url{https://www.gsea-msigdb.org/gsea/msigdb/cards/REACTOME_OPSINS}. Below I
+create a list with this linkout. The name of the list corresponds to the name
+of the annotationID.
+
+<<enrichmentsLinkouts>>=
+enrichmentsLinkouts <- list(
+  c2 = "https://www.gsea-msigdb.org/gsea/msigdb/cards/"
+)
+@
+
+Then I add the enrichments linkouts to the study.
+
+<<addEnrichmentsLinkouts>>=
+study <- addEnrichmentsLinkouts(study, enrichmentsLinkouts)
+@
+
+For more details, run \texttt{?addEnrichmentsLinkouts}.
+
+\subsection{MetaFeatures table linkouts}
+\label{sec:metaFeaturesLinkouts}
+
+You can provide linkouts to external resources for the metaFeatures in your
+study. These linkouts are embedded directly into the metaFeatures table
+(Section \ref{sec:metaFeatures}). The linkout URLs can use any of the columns
+in the optional metaFeatures table.
+
+For more details, run \texttt{?addMetaFeaturesLinkouts}.
+
+\subsection{Study metadata}
+\label{sec:studyMeta}
+
+You can add metadata to describe your study by passing a named list to to the
+argument \texttt{studyMeta} when creating your study with
+\texttt{createStudy}. The names of the list cannot contain spaces or colons,
+and they can't start with \texttt{\#} or \texttt{-}. The values of each list
+should be a single value.
+
+For more details, run \texttt{?createStudy}.
+
+\section{More information}
+
+This section contains more information about OmicNavigator studies.
+
+\subsection{Accessing elements from the OmicNavigator study}
+
+Each function to add elements to an OmicNavigator study, e.g.
+\texttt{addFeatures()}, has a corresponding function to get elements from an
+OmicNavigator study, e.g. \texttt{getFeatures()}. Below I collectively refer to
+these as ``get'' functions.
+
+Calling a ``get'' function on the study without any additional arguments will
+return a nested list with all the available information.
+
+<<>>=
+str(getFeatures(study))
+@
+
+Each ``get'' function also has arguments for filtering the results. For example,
+specifying \texttt{modelID = "main"} to \texttt{getFeatures()} returns the data
+frame with the features for that modelID.
+
+<<>>=
+str(getFeatures(study, modelID = "main"))
+@
+
+The situation is analogous for elements that are more highly nested. For
+example, the results tables are nested per test per model. Thus specifying the
+modelID returns a list of the available tests, and specifying both the modelID
+and testID returns the data frame.
+
+<<>>=
+str(getResults(study))
+str(getResults(study, modelID = "main"))
+str(getResults(study, modelID = "main", testID = "basal.vs.lp"))
+@
+
+Conveniently, the ``get'' functions work exactly the same on both OmicNavigator
+study objects defined in the current R session as well as installed
+OmicNavigator study packages. Instead of passing the object, you pass the name
+of the OmicNavigator study.
+
+<<eval=TRUE>>=
+str(getFeatures("vignetteExample", modelID = "main"))
+@
+
+\subsection{Sharing elements across models}
+
+The example study only had one model. This was for ease of demonstration.
+However, you are able to have has many models as you like. As mentioned in
+Section \ref{sec:overview-models}, different models can be completely different
+(e.g. transcripts versus protein measurements) or very similar (e.g. addition of
+one extra coefficient to the statistical model). In the case where two or more
+models are very similar, it would be unnecessarily tedious and
+storage-intensive to store identical information for multiple models of a
+given study. To avoid this, OmicNavigator recognizes the special modelID
+\texttt{default}. If a ``get'' function requests an element for a modelID
+which doesn't exist, it then looks to see if there is a table available for
+the modelID \texttt{default}. This allows you to specify shared elements that
+apply across models of a study as well as override the default for a subset of
+the models.
+
+As an example, in the RNAseq123 study, many of the elements could have been
+added for the modelID \texttt{default}. This would make no difference when
+there is only one model, and if another one was added, it would immediately
+share these elements. The code below demonstrates how the default features
+table is returned when a modelID is specified that doesn't have its own
+features table.
+
+<<>>=
+studyWithDefault <- addFeatures(study, list(default = basal.vs.lp[, 1:3]))
+str(getFeatures(studyWithDefault, modelID = "modelThatDoesntExistYet"))
+@
+
+\subsection{Naming OmicNavigator study packages}
+
+OmicNavigator studies are installed as standard R packages on your machine.
+This allows the app to query them using the
+\href{https://www.opencpu.org/}{OpenCPU} framework. In order to distinguish
+them from other R packages, by default the prefix
+``\Sexpr{OmicNavigator:::getPrefix()}'' is added to the package name. For
+example, an OmicNavigator study named ``ABC'' is installed as
+``\Sexpr{OmicNavigator:::studyToPkg("ABC")}''.
+
+If you'd like to change the default prefix, you can change the OmicNavigator
+package option that controls this behavior, \texttt{OmicNavigator.prefix}. For
+example, to use the prefix ``OmicNavigatorStudy'', you could add the following
+line to your .Rprofile file.
+
+<<package-option-prefix, eval=FALSE>>=
+options(OmicNavigator.prefix = "OmicNavigatorStudy")
+@
+
+For more details about this and other OmicNavigator package options, run
+\texttt{?OmicNavigator}.
+
+\subsection{Mapping between data elements and app features}
+\label{sec:mapping}
+
+The minimum requirement for a valid OmicNavigator study is a single results
+table. This will result in the app displaying an interactive table to explore
+the results. To enable more interactive features, you can add more data. The
+table below maps the app features to the required and optional data elements.
+Click on the links to be taken to the relevant section.
+
+\begin{tabular}{| p{1in} | p{2in} | p{2in} |}
+  \hline
+  \textbf{App feature} & \textbf{Required} & \textbf{Optional} \\
+  \hline
+  Results table & Results (\ref{sec:results}) & Features (\ref{sec:features}), resultsLinkouts (\ref{sec:resultsLinkouts}) \\
+  \hline
+  Enrichments table & Enrichments (\ref{sec:enrichments}) & enrichmentsLinkouts (\ref{sec:enrichmentsLinkouts}) \\
+  \hline
+  Enrichments network & Enrichments (\ref{sec:enrichments}), Annotations (\ref{sec:annotations}) &   \\
+  \hline
+  Enrichments barcode & Barcodes (\ref{sec:barcodes}), Enrichments (\ref{sec:enrichments}),  Results (\ref{sec:results}) &   \\
+  \hline
+  Custom plots & Plots (\ref{sec:plots}), Assays (\ref{sec:assays}), Samples (\ref{sec:samples})  &   \\
+  \hline
+  MetaFeatures table & metaFeatures (\ref{sec:metaFeatures}) & metaFeaturesLinkouts (\ref{sec:metaFeaturesLinkouts}) \\
+  \hline
+\end{tabular}
+
+\subsection{Matching plot theme to app's appearance}
+\label{sec:theme}
+
+Your custom plots will be displayed in the app. If you'd like, you can theme
+your plots so that they better integrate with the app's appearance, e.g. with
+\texttt{ggplot2::theme()} or \texttt{ggplot2::scale\_color\_discrete()}. Note
+that this is completely optional.
+
+The app uses the following colors:
+
+\begin{itemize}
+  \item orange-reddish \href{https://duckduckgo.com/?q=color+picker+%23ff4400&ia=answer}{\texttt{\#ff4400}}
+  \item light orange \href{https://duckduckgo.com/?q=color+picker+%23ff7e38&ia=answer}{\texttt{\#ff7e38}}
+  \item navy blueish \href{https://duckduckgo.com/?q=color+picker+%232c3b78&ia=answer}{\texttt{\#2c3b78}}
+  \item darker royal blueish \href{https://duckduckgo.com/?q=color+picker+%23465fc5&ia=answer}{\texttt{\#465fc5}}
+  \item baby blueish \href{https://duckduckgo.com/?q=color+picker+%234cd2d5&ia=answer}{\texttt{\#4cd2d5}}
+  \item royal blueish \href{https://duckduckgo.com/?q=color+picker+%231678c2&ia=answer}{\texttt{\#1678c2}}
+  \item white \href{https://duckduckgo.com/?q=color+picker+%23fff&ia=answer}{\texttt{\#fff}}
+  \item lightish grey \href{https://duckduckgo.com/?q=color+picker+%23e0e1e2&ia=answer}{\texttt{\#e0e1e2}}
+  \item light blackish \href{https://duckduckgo.com/?q=color+picker+%232e2e2e&ia=answer}{\texttt{\#2e2e2e}}
+\end{itemize}
+
+You can use the hexadecimal codes for the colors directly in R, e.g.
+
+<<theme, fig=TRUE>>=
+op <- par(bg = "#e0e1e2", fg = "#2e2e2e", no.readonly = TRUE)
+boxplot(mpg ~ cyl, data = mtcars, col = c("#ff4400", "#2c3b78", "#4cd2d5"))
+par(op)
+@
+
+The app's text is displayed in one of the following fonts. It will choose the
+first font it finds installed on the machine:
+
+\begin{enumerate}
+  \item \href{https://www.fontsquirrel.com/fonts/lato}{Lato}
+  \item Arial
+  \item Helvetica
+  \item Any sans-serif font
+\end{enumerate}
+
+Fair warning that getting R to use a custom installed font like Lato is
+non-trivial, and it's even more difficult to make it portable (i.e. so that
+the font will also work on the server where OmicNavigator is deployed or a
+colleague's machine). Two options for R packages that can help you use custom
+fonts in R plots are
+\href{https://cran.r-project.org/package=showtext}{showtext} and
+\href{https://cran.r-project.org/package=extrafont}{extrafont}.
+
+\section{Session information}
+
+<<session-information, echo=FALSE, results=tex>>=
+utils::toLatex(utils::sessionInfo())
+@
+
+\section{References}
+\begin{thebibliography}{2}
+
+  \bibitem{RNAseq123}
+    Law CW, Alhamdoosh M, Su S, Dong X, Tian L, Smyth GK, Ritchie ME.
+    \href{https://f1000research.com/articles/5-1408/v3}
+    {RNA-seq analysis is easy as 1-2-3 with limma, Glimma and edgeR [version 3; peer review: 3 approved].}
+    F1000Research 2018, 5:1408
+
+  \bibitem{Sheridan2015}
+     Sheridan, J.M., Ritchie, M.E., Best, S.A. et al.
+     \href{https://doi.org/10.1186/s12885-015-1187-z}
+     {A pooled shRNA screen for regulators of primary mammary stem and progenitor cells identifies roles for \textit{Asap1} and \textit{Prox1}.}
+     BMC Cancer 2015, 15:221
+
+\end{thebibliography}
+
+\end{document}
