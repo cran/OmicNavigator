@@ -11,12 +11,13 @@ Description:
   deployed online to be explored by collaborators. The dashboard includes
   'sortable' tables, interactive plots including network visualization, and
   fine-grained filtering based on statistical significance.
-Version: 1.4.2
+Version: 1.4.3
 Authors@R: c(
   person("Terrence", "Ernst", role = c("aut"),
          comment = "Web application"),
   person("John", "Blischak", role = c("aut", "cre"),
-         email = "jdblischak@gmail.com"),
+         email = "jdblischak@gmail.com",
+         comment = c(ORCID = "0000-0003-2634-9879")),
   person("Paul", "Nordlund", role = c("aut"),
          comment = "Web application"),
   person("Justin", "Moore", role = c("aut"),
@@ -43,9 +44,9 @@ Suggests: faviconPlease, ggplot2, opencpu, tinytest (>= 1.2.3), ttdo
         (>= 0.0.6), UpSetR
 RoxygenNote: 7.1.1
 NeedsCompilation: no
-Packaged: 2021-07-23 16:45:49 UTC; jdblischak
+Packaged: 2021-08-04 16:52:36 UTC; jdblischak
 Author: Terrence Ernst [aut] (Web application),
-  John Blischak [aut, cre],
+  John Blischak [aut, cre] (<https://orcid.org/0000-0003-2634-9879>),
   Paul Nordlund [aut] (Web application),
   Justin Moore [aut] (UpSet-related functions and web application),
   Joe Dalen [aut] (Barcode functionality and web application),
@@ -54,4 +55,4 @@ Author: Terrence Ernst [aut] (Web application),
   AbbVie Inc. [cph, fnd]
 Maintainer: John Blischak <jdblischak@gmail.com>
 Repository: CRAN
-Date/Publication: 2021-07-26 06:50:02 UTC
+Date/Publication: 2021-08-05 07:20:02 UTC

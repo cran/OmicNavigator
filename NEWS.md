@@ -1,3 +1,18 @@
+# 1.4.3
+
+* Bug fix: Prevent a single missing value in an ID column that is required to be
+unique (reported by Marco Rocha Curado)
+
+* Report the error message from `R CMD build` as a warning if `exportStudy()`
+fails to create a tarball for a study package
+
+* Add the argument `reset` to `addOverlaps()`. You would only potentially need
+this if you are pre-calculating the annotation term overlaps prior to exporting
+the study
+
+* Skip tests that fail only on CRAN Linux and macOS machines. The tests will
+continue to run on GitHub Actions
+
 # 1.4.2
 
 * Prepare for CRAN submission
