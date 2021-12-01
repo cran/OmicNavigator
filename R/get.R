@@ -6,9 +6,6 @@
 #' @return Returns a character vector of the installed OmicNavigator study
 #'   packages
 #'
-#' @examples
-#'  getInstalledStudies()
-#'
 #' @export
 getInstalledStudies <- function(libraries = NULL) {
   pkgsAll <- rownames(utils::installed.packages(lib.loc = libraries))
@@ -259,6 +256,24 @@ getPlots <- function(study, modelID = NULL, quiet = FALSE, libraries = NULL) {
     study,
     elements = "plots",
     filters = list(modelID = modelID),
+    default = "default",
+    fileType = "json",
+    quiet = quiet,
+    libraries = libraries
+  )
+}
+
+#' Get mapping object from a study
+#'
+#' @inherit shared-get
+#' @inheritParams listStudies
+#'
+#' @export
+getMapping <- function(study, quiet = FALSE, libraries = NULL) {
+  getElements(
+    study,
+    elements = "mapping",
+    filters = list(),
     default = "default",
     fileType = "json",
     quiet = quiet,

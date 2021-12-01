@@ -2,6 +2,7 @@
 
 # Setup ------------------------------------------------------------------------
 
+# source(paste0(getwd(), "/inst/tinytest/tinytestSettings.R"))
 source("tinytestSettings.R")
 using(ttdo)
 
@@ -185,7 +186,17 @@ names(invalidEnrichmentsLinkouts[["enrichmentsLinkouts"]])[1] <- "non-existent-a
 
 expect_error_xl(
   validateStudy(invalidEnrichmentsLinkouts),
-  "The annotationID \"non-existent-annotationID\" is not an available annotation\n"
+  "The annotationID \"non-existent-annotationID\" is not an available annotation"
+)
+
+# The annotationID referenced by the enrichmentLinkout must be included in the
+# enrichments. However, it's not required to contain the extra metadata added by
+# addAnnotations(). The latter is only required for the network view.
+enrichmentWithoutAnnotation <- testStudyObj
+enrichmentWithoutAnnotation[["annotations"]][["annotation_01"]] <- NULL
+
+expect_silent_xl(
+  validateStudy(enrichmentWithoutAnnotation)
 )
 
 # MetaFeatures Linkouts --------------------------------------------------------
@@ -202,4 +213,47 @@ expect_error_xl(
 expect_error_xl(
   validateStudy(invalidMetaFeaturesLinkouts),
   "\"non-existent-column\" is not the name of an available metaFeature"
+)
+
+# Plots ------------------------------------------------------------------------
+
+# A study no longer has to have assays and samples for custom plots since they
+# may only be plotting columns from the results table
+
+studyNoAssaysNoSamples <- testStudyObj
+studyNoAssaysNoSamples[["assays"]] <- list()
+studyNoAssaysNoSamples[["samples"]] <- list()
+
+expect_true_xl(
+  validateStudy(studyNoAssaysNoSamples),
+  info = "Custom plots may only plot results data. Assays and samples not required"
+)
+
+# A study can also have assays but not samples
+studyNoSamples <- testStudyObj
+studyNoSamples[["samples"]] <- list()
+
+expect_true_xl(
+  validateStudy(studyNoSamples),
+  info = "Samples not required to plot assays data"
+)
+
+# Mapping ----------------------------------------------------------------------
+
+# Check if model names from mapping are not matching model names from results
+invalidMapping <- testStudyObj
+names(invalidMapping[["mapping"]]) <- c("model_01", "model")
+
+expect_error_xl(
+  validateStudy(invalidMapping),
+  "At least one mapping name does not match any model name from results table\n"
+)
+
+# Check if features from mapping are not matching features from results
+invalidMapping <- testStudyObj
+invalidMapping[["mapping"]][["model_01"]] <- rep("non-matching feature", 100)
+
+expect_error_xl(
+  validateStudy(invalidMapping),
+  "Mapping features for modelID do not match features from modelID results table\n"
 )

@@ -94,6 +94,9 @@ local({
 List all the available studies along with their models, tests, annotations, and
 plots.
 
+\textbf{Update:} The \texttt{plotType} may be a single string or a nested list
+of multiple plot types (e.g. ``singleFeature'' and ``multiTest'')
+
 <<list-studies, eval=FALSE>>=
 studies <- listStudies()
 @
@@ -210,7 +213,7 @@ toJSON(linkFeatures[1:4], pretty = TRUE)
 \label{sec:custom-plots}
 
 Display the custom plots provided by the user with \texttt{plotStudy()}. Provided a
-study, model, feature, and plot, \texttt{plotStudy()} generates the custom plot.
+study, model, feature, test, and plot, \texttt{plotStudy()} generates the custom plot.
 
 The featureID is obtained from the first column returned by
 \texttt{getResultsTable()} (Section \ref{sec:results-table}). The remaining arguments
@@ -222,7 +225,8 @@ plotStudy(
   study = "ABC",
   modelID = "model_01",
   featureID = "feature_0001",
-  plotID = "plotBase"
+  plotID = "plotBase",
+  testID = "test_01"
 )
 @
 
@@ -231,7 +235,8 @@ plotStudy(
   study = "ABC",
   modelID = "model_03",
   featureID = "feature_0001",
-  plotID = "plotGg"
+  plotID = "plotGg",
+  testID = "test_01"
 )
 @
 
@@ -245,7 +250,45 @@ plotStudy(
   study = "ABC",
   modelID = "model_01",
   featureID = c("feature_0001", "feature_0002"),
-  plotID = "plotMultiFeature"
+  plotID = "plotMultiFeature",
+  testID = "test_01"
+)
+@
+
+In addition, the study can provide ``multiTest'' plots, which accept more than
+one testID. These can be provided via the field \texttt{plotType} in the output
+from \texttt{listStudies()} (Section \ref{sec:list-studies}). Note that plotType
+for ``multiTest'' may be provided in a vector,
+e.g. plotType = c(``multiFeature'', ``multiTest''). A call for plotType =
+``multiTest'' is set to default to plotType = c(``singleFeature'', ``multiTest'')
+
+<<plotStudy-plotMultiTest, fig=TRUE>>=
+plotStudy(
+  study = "ABC",
+  modelID = "model_01",
+  featureID = c("feature_0001", "feature_0002"),
+  plotID = "plotMultiTestMf",
+  testID = c("test_01", "test_02")
+)
+@
+
+Finally, the study can provide ``multiModel'' plots, which accept more than
+one modelID and one or more testIDs per modelID. These can be provided via the
+field \texttt{plotType} in the output from \texttt{listStudies()} (Section
+\ref{sec:list-studies}). Note that for plotType = ``multiModel'', testID must be
+provided as a named vector, with each testID named after the related modelID
+
+<<plotStudy-plotMultiTest, fig=TRUE>>=
+modelID <- c("model_01", "model_02")
+testID <- c("test_01", "test_02")
+names(testID) <- modelID
+
+plotStudy(
+  study = "ABC",
+  modelID = modelID,
+  featureID = c("feature_0002", "feature_0003", "feature_0004"),
+  plotID = "multiModel_scatterplot",
+  testID = testID
 )
 @
 

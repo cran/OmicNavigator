@@ -233,6 +233,12 @@ checkAssays <- function(assays) {
       nrow(assays[[i]]) > 0,
       ncol(assays[[i]]) > 0
     )
+    # All the columns must be numeric
+    colsAllNum <- all(vapply(assays[[i]], is.numeric, logical(1)))
+    if (!colsAllNum) {
+      stop("The columns of the assays data frame must all be numeric.\n",
+           sprintf("Problematic modelID: %s", names(assays)[i]))
+    }
   }
 
   return(NULL)
@@ -349,12 +355,23 @@ checkMetaFeatures <- function(metaFeatures, study = NULL) {
 checkPlots <- function(plots) {
   checkList(plots)
 
+  # Can't name a custom plotting function the same name as any function in the
+  # base namespace. When the plotting function is found via dynGet() based on
+  # its name, the function in package:base is found first. This is not a problem
+  # for any of the other packages on the search path.
+  reservedNames <- ls("package:base")
+
   for (i in seq_along(plots)) {
     checkList(plots[[i]])
     for (j in seq_along(plots[[i]])) {
       plotEntry <- plots[[i]][[j]]
       checkList(plotEntry)
       plotID <- names(plots[[i]])[j]
+      if (plotID %in% reservedNames) {
+        stop(sprintf("Invalid plotID: \"%s\"\n", plotID),
+             "You can't name the custom plotting using the same name as any function in package:base.\n",
+             "Run ls(\"package:base\") to see the list of prohibited names\n")
+      }
       plotFunction <- getPlotFunction(plotID)
       if (!is.function(plotFunction)) {
         stop(sprintf("Unable to find function \"%s\"", plotID))
@@ -379,6 +396,39 @@ checkPlots <- function(plots) {
       if (is.null(plotEntry[["displayName"]])) {
         stop(sprintf("Must define displayName for plot \"%s\"", plotID))
       }
+    }
+  }
+
+  return(NULL)
+}
+
+checkMapping <- function(mapping) {
+  checkList(mapping)
+
+  # stop if mapping object has less than 2 elements
+  if (length(mapping) > 0) stopifnot(length(mapping) > 1)
+  else return(NULL)
+
+  # check if list elements have the same size. If not, fill difference with NA.
+  listMaxLength <- max(sapply(mapping, length))
+  mapping <- lapply(lapply(mapping, unlist), "length<-", listMaxLength)
+
+  mappingdf <- as.data.frame(mapping, stringsAsFactors = FALSE)
+
+  # NAs are accepted, but not if all values for a model are NA
+  stopifnot(vapply(mappingdf, is.character, logical(1)))
+
+  # check if any given model has at least one feature aligned with another model
+  for (i in seq_along(mappingdf)) {
+    tempModel   <- mappingdf[!is.na(mappingdf[[i]]),]
+    if (nrow(tempModel) > 1) {
+      featAligned <- any(apply(!sapply(tempModel, is.na), 1, sum) > 1)
+    } else {
+      featAligned <- any(sum(!sapply(tempModel, is.na)) > 1)
+    }
+
+    if (!is.na(featAligned) && !featAligned) {
+      stop(sprintf("Model \"%s\" does not present any feature mapping to another model.", colnames(mappingdf)[[i]]))
     }
   }
 

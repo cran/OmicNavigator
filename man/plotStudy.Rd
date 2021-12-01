@@ -4,7 +4,7 @@
 \alias{plotStudy}
 \title{Plot a feature using a custom plotting function}
 \usage{
-plotStudy(study, modelID, featureID, plotID, libraries = NULL)
+plotStudy(study, modelID, featureID, plotID, testID = NULL, libraries = NULL)
 }
 \arguments{
 \item{study}{An OmicNavigator study. Either an object of class \code{onStudy},
@@ -15,6 +15,8 @@ or the name of an installed study package.}
 \item{featureID}{Filter by featureID}
 
 \item{plotID}{Filter by plotID}
+
+\item{testID}{Filter by testID}
 
 \item{libraries}{The directories to search for installed study packages. If
 left as \code{NULL} (the default), then
@@ -28,6 +30,15 @@ This function is called for the side effect of creating a plot.
 }
 \description{
 Plot a feature using a custom plotting function
+}
+\details{
+The arguments \code{study}, \code{modelID}, \code{featureID}, and
+\code{testID} are passed to the function \code{\link{getPlottingData}}, and
+the nested list returned by this function is passed as the first argument to
+your custom plotting function. By default, the app will pass a single
+featureID unless the plotType is "multiFeature". Similarly, the app will pass
+a single testID unless the plotType is "multiTest". You can specify the
+plotType when you add a plot with \code{\link{addPlots}}.
 }
 \seealso{
 \code{\link{addPlots}}, \code{\link{getPlottingData}}

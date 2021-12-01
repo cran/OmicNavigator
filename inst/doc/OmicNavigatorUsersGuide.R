@@ -271,7 +271,7 @@ study <- addAssays(study, assays)
 
 
 ###################################################
-### code chunk number 34: OmicNavigatorUsersGuide.Rnw:892-894
+### code chunk number 34: OmicNavigatorUsersGuide.Rnw:897-899
 ###################################################
 plottingData <- getPlottingData(study, modelID = "main", featureID = "12767")
 plottingData
@@ -287,7 +287,7 @@ boxplot(as.numeric(plottingData$assays[1, ]) ~ plottingData$samples$group,
 
 
 ###################################################
-### code chunk number 36: OmicNavigatorUsersGuide.Rnw:912-918
+### code chunk number 36: OmicNavigatorUsersGuide.Rnw:917-923
 ###################################################
 cellTypeBox <- function(plottingData) {
   boxplot(as.numeric(plottingData$assays[1, ]) ~ plottingData$samples$group,
@@ -312,7 +312,7 @@ ggplot(ggDataFrame, aes(x = group, y = feature, fill = group)) +
 
 
 ###################################################
-### code chunk number 38: OmicNavigatorUsersGuide.Rnw:948-958
+### code chunk number 38: OmicNavigatorUsersGuide.Rnw:953-963
 ###################################################
 cellTypeBoxGg <- function(plottingData) {
   ggDataFrame <- cbind(plottingData$samples,
@@ -345,7 +345,26 @@ plotPca(twoFeatures)
 
 
 ###################################################
-### code chunk number 40: OmicNavigatorUsersGuide.Rnw:999-1018
+### code chunk number 40: multiTest
+###################################################
+multiTests <- getPlottingData(study, modelID = "main",
+                              featureID = row.names(study$assays$main),
+                              testID = c("basal.vs.lp", "basal.vs.ml"))
+
+plotMultiTestMf <- function(x) {
+    df <- data.frame(lapply(x$results, `[`, 2))
+    colnames(df)<- names(x$results)
+
+    plot(df$basal.vs.lp ~ df$basal.vs.ml,
+         xlab = paste0("log FC ", colnames(df)[2]),
+         ylab = paste0("log FC ", colnames(df)[3]))
+    abline(v=0, h = 0, col="grey")
+}
+plotMultiTestMf(multiTests)
+
+
+###################################################
+### code chunk number 41: OmicNavigatorUsersGuide.Rnw:1033-1056
 ###################################################
 plots <- list(
   main = list(
@@ -362,6 +381,10 @@ plots <- list(
       displayName = "PCA",
       plotType = "multiFeature",
       packages = c("stats")
+    ),
+    plotMultiTestMf = list(
+      displayName = "scatterplot",
+      plotType = c("multiTest", "multiFeature")
     )
   )
 )
@@ -369,34 +392,34 @@ study <- addPlots(study, plots = plots)
 
 
 ###################################################
-### code chunk number 41: plotStudy1
+### code chunk number 42: plotStudy1
 ###################################################
 plotStudy(study, modelID = "main", featureID = "21390",
           plotID = "cellTypeBox")
 
 
 ###################################################
-### code chunk number 42: plotStudy2
+### code chunk number 43: plotStudy2
 ###################################################
 plotStudy(study, modelID = "main", featureID = "21390",
           plotID = "cellTypeBoxGg")
 
 
 ###################################################
-### code chunk number 43: plotStudy3
+### code chunk number 44: plotStudy3
 ###################################################
 plotStudy(study, modelID = "main", featureID = c("21390", "19216"),
           plotID = "plotPca")
 
 
 ###################################################
-### code chunk number 44: OmicNavigatorUsersGuide.Rnw:1104-1105
+### code chunk number 45: OmicNavigatorUsersGuide.Rnw:1148-1149
 ###################################################
 reportUrl = "https://bioconductor.org/packages/release/workflows/vignettes/RNAseq123/inst/doc/limmaWorkflow.html"
 
 
 ###################################################
-### code chunk number 45: OmicNavigatorUsersGuide.Rnw:1112-1115
+### code chunk number 46: OmicNavigatorUsersGuide.Rnw:1156-1159
 ###################################################
 reports <- list(
   main = reportUrl
@@ -404,13 +427,13 @@ reports <- list(
 
 
 ###################################################
-### code chunk number 46: OmicNavigatorUsersGuide.Rnw:1120-1121
+### code chunk number 47: OmicNavigatorUsersGuide.Rnw:1164-1165
 ###################################################
 study <- addReports(study, reports)
 
 
 ###################################################
-### code chunk number 47: resultsLinkouts
+### code chunk number 48: resultsLinkouts
 ###################################################
 resultsLinkouts <- list(
   default = list(
@@ -420,13 +443,13 @@ resultsLinkouts <- list(
 
 
 ###################################################
-### code chunk number 48: addResultsLinkouts
+### code chunk number 49: addResultsLinkouts
 ###################################################
 study <- addResultsLinkouts(study, resultsLinkouts)
 
 
 ###################################################
-### code chunk number 49: enrichmentsLinkouts
+### code chunk number 50: enrichmentsLinkouts
 ###################################################
 enrichmentsLinkouts <- list(
   c2 = "https://www.gsea-msigdb.org/gsea/msigdb/cards/"
@@ -434,25 +457,25 @@ enrichmentsLinkouts <- list(
 
 
 ###################################################
-### code chunk number 50: addEnrichmentsLinkouts
+### code chunk number 51: addEnrichmentsLinkouts
 ###################################################
 study <- addEnrichmentsLinkouts(study, enrichmentsLinkouts)
 
 
 ###################################################
-### code chunk number 51: OmicNavigatorUsersGuide.Rnw:1222-1223
+### code chunk number 52: OmicNavigatorUsersGuide.Rnw:1266-1267
 ###################################################
 str(getFeatures(study))
 
 
 ###################################################
-### code chunk number 52: OmicNavigatorUsersGuide.Rnw:1230-1231
+### code chunk number 53: OmicNavigatorUsersGuide.Rnw:1274-1275
 ###################################################
 str(getFeatures(study, modelID = "main"))
 
 
 ###################################################
-### code chunk number 53: OmicNavigatorUsersGuide.Rnw:1239-1242
+### code chunk number 54: OmicNavigatorUsersGuide.Rnw:1283-1286
 ###################################################
 str(getResults(study))
 str(getResults(study, modelID = "main"))
@@ -460,26 +483,26 @@ str(getResults(study, modelID = "main", testID = "basal.vs.lp"))
 
 
 ###################################################
-### code chunk number 54: OmicNavigatorUsersGuide.Rnw:1250-1251
+### code chunk number 55: OmicNavigatorUsersGuide.Rnw:1294-1295
 ###################################################
 str(getFeatures("vignetteExample", modelID = "main"))
 
 
 ###################################################
-### code chunk number 55: OmicNavigatorUsersGuide.Rnw:1277-1279
+### code chunk number 56: OmicNavigatorUsersGuide.Rnw:1321-1323
 ###################################################
 studyWithDefault <- addFeatures(study, list(default = basal.vs.lp[, 1:3]))
 str(getFeatures(studyWithDefault, modelID = "modelThatDoesntExistYet"))
 
 
 ###################################################
-### code chunk number 56: package-option-prefix (eval = FALSE)
+### code chunk number 57: package-option-prefix (eval = FALSE)
 ###################################################
 ## options(OmicNavigator.prefix = "OmicNavigatorStudy")
 
 
 ###################################################
-### code chunk number 57: theme
+### code chunk number 58: theme
 ###################################################
 op <- par(bg = "#e0e1e2", fg = "#2e2e2e", no.readonly = TRUE)
 boxplot(mpg ~ cyl, data = mtcars, col = c("#ff4400", "#2c3b78", "#4cd2d5"))
@@ -487,7 +510,7 @@ par(op)
 
 
 ###################################################
-### code chunk number 58: session-information
+### code chunk number 59: session-information
 ###################################################
 utils::toLatex(utils::sessionInfo())
 

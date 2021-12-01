@@ -31,6 +31,7 @@
 #' @inheritParams addEnrichments
 #' @inheritParams addMetaFeatures
 #' @inheritParams addPlots
+#' @inheritParams addMapping
 #' @inheritParams addBarcodes
 #' @inheritParams addReports
 #' @inheritParams addResultsLinkouts
@@ -51,6 +52,7 @@
 #'   \code{\link{addEnrichments}},
 #'   \code{\link{addMetaFeatures}},
 #'   \code{\link{addPlots}},
+#'   \code{\link{addMapping}},
 #'   \code{\link{addBarcodes}},
 #'   \code{\link{addReports}},
 #'   \code{\link{addResultsLinkouts}},
@@ -86,6 +88,7 @@ createStudy <- function(name,
                         enrichments = list(),
                         metaFeatures = list(),
                         plots = list(),
+                        mapping = list(),
                         barcodes = list(),
                         reports = list(),
                         resultsLinkouts = list(),
@@ -115,6 +118,7 @@ createStudy <- function(name,
                 enrichments = list(),
                 metaFeatures = list(),
                 plots = list(),
+                mapping = list(),
                 barcodes = list(),
                 reports = list(),
                 resultsLinkouts = list(),
@@ -137,6 +141,7 @@ createStudy <- function(name,
   study <- addEnrichments(study, enrichments = enrichments)
   study <- addMetaFeatures(study, metaFeatures = metaFeatures)
   study <- addPlots(study, plots = plots)
+  study <- addMapping(study, mapping = mapping)
   study <- addBarcodes(study, barcodes = barcodes)
   study <- addReports(study, reports = reports)
   study <- addResultsLinkouts(study, resultsLinkouts = resultsLinkouts)
@@ -362,9 +367,10 @@ addMetaFeatures <- function(study, metaFeatures, reset = FALSE) {
 #' the user.
 #'
 #' Custom plotting functions are passed a list of data frames: \code{assays}
-#' with the measurements, \code{features} with the feature data, and
-#' \code{samples} with the sample data. Both \code{assays} and \code{features}
-#' are subset to only include data for the specified featureID(s) (and
+#' with the measurements, \code{features} with the feature data,
+#' \code{samples} with the sample data, and \code{results} with test results
+#' data. Note that \code{assays}, \code{features} and \code{results}
+#' only include data for the specified featureID(s) (and
 #' re-ordered so their rows match). Thus your custom plotting function must have
 #' at least one argument. It can have additional arguments if you wish, but
 #' these must be provided with default values, because \code{plotStudy} only
@@ -385,11 +391,14 @@ addMetaFeatures <- function(study, metaFeatures, reset = FALSE) {
 #'   session. The third list provides metadata to describe each plot. The only
 #'   required metadata element is \code{displayName}, which controls how the
 #'   plot will be named in the app. You are encouraged to also specify the
-#'   \code{plotType}, e.g. \code{"singleFeature"}, \code{"multiFeature"}. If you
-#'   do not specify the \code{plotType}, the plot will be assumed to be
-#'   \code{"singleFeature"}. Optionally, if the plotting function requires
-#'   external packages, these can be defined in the element \code{packages}. To
-#'   share plots across multiple models, use the modelID "default".
+#'   \code{plotType}, e.g. \code{"singleFeature"}, \code{"multiFeature"},
+#'   \code{"multiTest"}, \code{"multiModel"}. PlotType accepts vector of
+#'   entries, whenever applicable, e.g., plotType = c(\code{"multiFeature"},
+#'   \code{"multiTest"}). If you do not specify the \code{plotType}, the plot
+#'   will be assumed to be \code{"singleFeature"} and \code{"singleTest"}.
+#'   Optionally, if the plotting function requires external packages, these can
+#'   be defined in the element \code{packages}. To share plots across multiple
+#'   models, use the modelID "default".
 #' @inherit shared-add
 #'
 #' @seealso \code{\link{getPlottingData}}, \code{\link{plotStudy}}
@@ -397,6 +406,34 @@ addMetaFeatures <- function(study, metaFeatures, reset = FALSE) {
 #' @export
 addPlots <- function(study, plots, reset = FALSE) {
   addElements(study, plots, reset)
+}
+
+#' Add mapping object
+#'
+#' Includes a mapping list connecting features across models.
+#'
+#' Mapping object consists of a list with element names matching the model
+#' names, and each element consisting in a vector with feature IDs found in the
+#' result object. For making meaningful connections between models, feature IDs
+#' for distinct models must be aligned per index position in the vector.
+#' E.g., if in a study there are models "transcriptomics" and "proteomics" and
+#' the user wants to create a plot based on data from both, a mapping list with
+#' element names "transcriptomics" and "proteomics" should be created, where
+#' feature IDs of both models are found in the same index position in each list
+#' element.
+#'
+#' @param mapping Feature IDs from models. The input object is a list object
+#'   with element names matching model names, and each element containing a
+#'   vector with feature IDs per model. Features with same index position across
+#'   models are considered found across models. For each model, the feature IDs
+#'   must match the feature IDs from results object of the respective model.
+#' @inherit shared-add
+#'
+#' @seealso \code{\link{getPlottingData}}, \code{\link{plotStudy}}
+#'
+#' @export
+addMapping <- function(study, mapping, reset = FALSE) {
+  addElements(study, mapping, reset)
 }
 
 #' Add barcode plot metadata

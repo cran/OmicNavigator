@@ -1,3 +1,84 @@
+# 1.8.0
+
+* Support for new plotType multiModel. This will enable visualizations between
+models of a given study. See the User's Guide for instructions. Note that
+currently this is only supported when calling `plotStudy()` in the R console.
+Support for multiModel plots in the app will be implemented in a future release.
+For now, the app will send a harmless error if it encounters a multiModel plot
+(implemented by [Marco Curado](https://github.com/curadomr) in [PR
+#8](https://github.com/abbvie-external/OmicNavigator/pull/8))
+
+# 1.7.1
+
+* The release tarball includes version 1.4.0 of the web app
+
+# 1.7.0
+
+* New study element `mapping` for mapping featureIDs across models of a study
+(see `?addMapping` and `getMapping`). This will make it possible to create plots
+that combine data across models, which will be enabled in future versions
+(implemented by [Marco Curado](https://github.com/curadomr) in [PR
+#7](https://github.com/abbvie-external/OmicNavigator/pull/7))
+
+* Bug fix: The validation of the enrichments table linkouts was too strict. It
+required that the annotationID be present in the annotations created by
+`addAnnotations()`. This extra information about the annotationID is only
+required for the network view. The validation now only throws an error if the
+annotationID was not included for at least one modelID in the enrichments data
+added with `addEnrichments()` (reported by [Anastasia
+Galperina](https://github.com/agalperina))
+
+* Bug fix: Now that custom plots can include data from the results table, it is
+no longer an error to include custom plots in a study without assays or samples
+data (reported by Joe LoGrasso). Also relaxed the validation requirement for
+custom plots so that the study can contain assays data but not corresponding
+samples data
+
+* Bug fix: Custom plotting functions cannot have the same name as any of the
+functions defined in the base package. This error is now caught early with
+`addPlots()` (reported by [Anastasia Galperina](https://github.com/agalperina))
+
+# 1.6.3
+
+* The release tarball includes version 1.3.4 of the web app
+
+# 1.6.2
+
+* The release tarball includes version 1.3.3 of the web app
+
+# 1.6.1
+
+* The release tarball includes version 1.3.2 of the web app
+
+* New `plotType` of `"multiTest"`. Include this when adding a custom plot with
+`addPlots()` to have the app pass the results tables for all testIDs for a given
+modelID (implemented by [Marco Curado](https://github.com/curadomr) in [PR
+#6](https://github.com/abbvie-external/OmicNavigator/pull/6))
+
+* Bug fix: The documentation states that the assays table must only contain
+numeric columns. However, if a user added a data frame with non-numeric columns,
+no warning or error occurred. Now `addAssays()` will throw an error if it
+detects any non-numeric columns (reported by [Anastasia
+Galperina](https://github.com/agalperina) in [WebApp Issue
+#57](https://github.com/abbvie-external/OmicNavigatorWebApp/issues/57))
+
+# 1.5.2
+
+* The release tarball includes version 1.3.1 of the web app
+
+# 1.5.1
+
+* The release tarball includes version 1.2.1 of the web app
+
+* Both `plotStudy()` and `getPlottingData()` gained a new argument `testID`. If
+supplied, the R object passed to your custom plotting function will include the
+element `results` that contains the rows of the results table for that testID
+for the provided featureID(s). The app always passes the testID when calling
+`plotStudy()`. If your plotting function doesn't need the information in the
+results table, it will continue to work as before (implemented by [Marco
+Curado](https://github.com/curadomr) in [PR
+#4](https://github.com/abbvie-external/OmicNavigator/pull/4))
+
 # 1.4.3
 
 * Bug fix: Prevent a single missing value in an ID column that is required to be
