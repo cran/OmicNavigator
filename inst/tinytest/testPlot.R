@@ -30,7 +30,7 @@ pkgDependencies <- utils::packageDescription(
 
 expect_identical_xl(
   pkgDependencies,
-  "data.table, ggplot2, graphics, rlang, stats"
+  "data.table, ggplot2, graphics, plotly, rlang, stats"
 )
 
 pkgExports <- sort(getNamespaceExports(testPkgName))
@@ -90,6 +90,10 @@ expect_silent_xl(
 expect_error_xl(
   plotStudy(testStudyObj, modelID = "model_03", featureID = "feature_0001", plotID = "plotBase")
 )
+#plotly
+expect_error_xl(
+  plotStudy(testStudyObj, modelID = "model_01", featureID = "feature_0001", plotID = "plotPlotly")
+)
 
 expect_error_xl(
   plotStudy(testStudyObj, modelID = "model_01", featureID = "feature_0001", plotID = "plotGg")
@@ -130,6 +134,10 @@ expect_silent_xl(
 
 expect_error_xl(
   plotStudy(testStudyName, modelID = "model_03", featureID = "feature_0001", plotID = "plotBase")
+)
+#plotly
+expect_error_xl(
+  plotStudy(testStudyName, modelID = "model_04", featureID = "feature_0001", plotID = "plotPlotly")
 )
 
 expect_error_xl(
@@ -936,6 +944,33 @@ expect_identical_xl(
   plottingData[["results"]][[1]],
   c("feature_0006", "feature_0002")
 )
+
+# Plotly Plots -----------------------------------------------------------------
+
+json <- plotStudy(testStudyName, modelID = "model_03", featureID = "feature_0001", plotID = "plotPlotly")
+expect_true_xl(
+  inherits(json, "json")
+)
+
+# Catch plots of plotType "plotly" that don't correctly return a plotly plot
+notPlotlyFunc <- function(x) graphics::plot(1:10)
+notPlotlyFuncList <- list(
+  default = list(
+    notPlotlyFunc = list(
+      displayName = "notPlotly",
+      plotType = "plotly",
+      packages = "plotly"
+    )
+  )
+)
+
+testStudyNotPloty <- addPlots(testStudyObj, notPlotlyFuncList)
+expect_error(
+  plotStudy(testStudyNotPloty, modelID = "model_01", featureID = "feature_0001", plotID = "notPlotlyFunc"),
+  "The plotID \"notPlotlyFunc\" has plotType \"plotly\" but did not return an object with class \"plotly\"",
+  info = "Detect invalid plotly functions"
+)
+
 
 # Teardown ---------------------------------------------------------------------
 

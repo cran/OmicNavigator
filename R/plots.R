@@ -6,14 +6,13 @@
 #' @details The arguments \code{study}, \code{modelID}, \code{featureID}, and
 #' \code{testID} are passed to the function \code{\link{getPlottingData}}, and
 #' the nested list returned by this function is passed as the first argument to
-#' your custom plotting function. By default, the app will pass a single
-#' featureID unless the plotType is "multiFeature". Similarly, the app will pass
-#' a single testID unless the plotType is "multiTest". You can specify the
-#' plotType when you add a plot with \code{\link{addPlots}}.
+#' your custom plotting function.
 #'
-#' @return This function is called for the side effect of creating a plot.
-#'   However, it also invisible returns the original \code{onStudy} object
-#'   passed to \code{study}.
+#' @return This function is called for the side effect of creating a plot. It
+#'   invisibly returns the result from the custom plotting function specified by
+#'   \code{plotID}. Previously it invisibly returned the study object. It's
+#'   unlikely you relied on this behavior. For a ggplot2 plot, the return value
+#'   will be the plotting object with class \code{"ggplot"}.
 #'
 #' @seealso \code{\link{addPlots}}, \code{\link{getPlottingData}}
 #'
@@ -33,11 +32,12 @@ plotStudy <- function(study, modelID, featureID, plotID, testID = NULL, librarie
     plots <- c(plots, tempPlots)
   }
   plotsAvailable <- names(plots)
-  if(!plotID %in% plotsAvailable) {
+  if (!plotID %in% plotsAvailable) {
     stop(sprintf("The plot \"%s\" is not available.\n", plotID),
          "Plots available:\n",
          sprintf("* \"%s\"\n", plotsAvailable))
   }
+
   p <- plots[[plotID]]
   if (inherits(study, "onStudy")) {
     f <- getPlotFunction(plotID)
@@ -61,6 +61,7 @@ plotStudy <- function(study, modelID, featureID, plotID, testID = NULL, librarie
   }
 
   nPlotType <- length(plotType)
+  dynamic <- FALSE
 
   for (ind in 1:nPlotType) {
     if (plotType[ind] == "singleFeature") {
@@ -95,6 +96,9 @@ plotStudy <- function(study, modelID, featureID, plotID, testID = NULL, librarie
         sprintf("Received %d testID(s)", nTests)
       )
     }
+    if (plotType[ind] == "plotly") {
+      dynamic <- TRUE
+    }
     # multiModel is checked as a multiTest as it requires at least 2 testIDs, eg.:
     # (1) 1 testID per model and > 1 model
     # (2) > 1 testID and 1 model
@@ -119,18 +123,18 @@ plotStudy <- function(study, modelID, featureID, plotID, testID = NULL, librarie
           )
         }
       }
+      if (length(modelID) > 1) {
+        model_features <- mapping[[modelID[1]]][!is.na(mapping[[modelID[1]]])]
+        if (!all(featureID %in% model_features)) {
+          stop(
+            "features list contains at least one feature not present in the corresponding model from mapping object\n",
+            sprintf("ModelID : %s", modelID[1])
+          )
+        }
+      }
     }
   }
 
-  if (length(modelID) > 1) {
-    model_features <- mapping[[modelID[1]]][!is.na(mapping[[modelID[1]]])]
-    if (!all(featureID %in% model_features)) {
-      stop(
-        "features list contains at least one feature not present in the corresponding model from mapping object\n",
-        sprintf("ModelID : %s", modelID[1])
-        )
-    }
-  }
 
   plottingData <- getPlottingData(study, modelID, featureID, testID = testID,
                                   libraries = libraries)
@@ -153,10 +157,25 @@ plotStudy <- function(study, modelID, featureID, plotID, testID = NULL, librarie
     }
   }
 
-  returned <- f(plottingData)
+  if (dynamic == TRUE) {
+    returned <- f(plottingData)
+    if (!inherits(returned, "plotly")) {
+      stop(sprintf("The plotID \"%s\" has plotType \"plotly\" but did not return an object with class \"plotly\"",
+                   plotID))
+    }
+    returned <- plotly::plotly_json(returned, jsonedit = FALSE)
+  } else {
+    returned <- f(plottingData)
+  }
+
+  # This is required so that the plot is immediately displayed. The final value
+  # is returned invisibly to avoid overwhelming the R console with the data some
+  # plotting functions return, but this prevents the ggplot object from
+  # displaying (it's the same reason you have to print() ggplot plots inside a
+  # for loop).
   if (inherits(returned, "ggplot")) print(returned)
 
-  return(invisible(study))
+  return(invisible(returned))
 }
 
 getPlotFunction <- function(plotID, study = NULL) {
@@ -185,6 +204,8 @@ resetPar <- function(originalParSettings) {
 resetSearch <- function(pkgNamespaces) {
   searchPath <- search()
   pkgNamespaces <- unique(pkgNamespaces)
+  # Detach packages in reverse order to avoid dependency conflicts
+  pkgNamespaces <- pkgNamespaces[rank(match(pkgNamespaces, searchPath))]
   for (namespace in pkgNamespaces) {
     if (namespace %in% searchPath) {
       detach(namespace, character.only = TRUE)
@@ -197,6 +218,8 @@ resetSearch <- function(pkgNamespaces) {
 #' This function creates the input data that \code{\link{plotStudy}} passes to
 #' custom plotting functions added with \code{\link{addPlots}}. You can use it
 #' directly when you are interactively creating your custom plotting functions.
+#' Note that for multiModel plots testID is required to be a named vector, with
+#' each testID named after the related modelID.
 #'
 #' @inheritParams shared-get
 #' @inheritParams listStudies

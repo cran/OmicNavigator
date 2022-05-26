@@ -101,3 +101,101 @@ expect_message_xl(
 )
 
 rm(studyNoAssays, plotBetas)
+
+# Results table with only 2 columns --------------------------------------------
+
+# Have to set drop=FALSE in getUpsetCols() when the results table(s) only have 2
+# columns total. This is because after the featureID column is removed, then the
+# 1 remaining results column is converted to a vector. Then colnames() returns
+# NULL (since it's a vector), and no common column names are found, thus
+# disabling the set intersection features
+#
+# Creating an entire test study to confirm this well known error seems overkill
+# (even for me). Here I simply confirm that drop=FALSE solves this type of issue
+
+local({
+  results <- list(
+    test1 = data.frame(id = 1:3, stat = 1:3),
+    test2 = data.frame(id = 1:3, stat = 1:3)
+  )
+  colsAll <- lapply(results, function(x) colnames(x[, -1, drop = FALSE]))
+  colsCommon <- Reduce(intersect, colsAll)
+  expect_identical_xl(
+    colsCommon,
+    "stat"
+  )
+})
+
+# Empty sub-lists --------------------------------------------------------------
+
+# Empty lists at the top-level are fine since this is the default when there is
+# no data for that element. However, sub-lists in big nested lists like
+# enrichments can cause problems. Because the loop is never entered, they are
+# simply skipped by the checkX() functions. But when it comes time to export
+# the study, these empty sub-lists can be mistakenly interpreted as containing
+# data.
+
+local({
+  models <- OmicNavigator:::testModels()
+  models[["empty"]] <- list()
+  expect_error_xl(
+    OmicNavigator:::checkModels(models),
+    "An empty list is not allowed in this context"
+  )
+
+  tests <- OmicNavigator:::testTests()
+  tests[["empty"]] <- list()
+  expect_error_xl(
+    OmicNavigator:::checkTests(tests),
+    "An empty list is not allowed in this context"
+  )
+
+  annotations <- OmicNavigator:::testAnnotations()
+  annotations[["empty"]] <- list()
+  expect_error_xl(
+    OmicNavigator:::checkAnnotations(annotations),
+    "An empty list is not allowed in this context"
+  )
+
+  results <- OmicNavigator:::testResults()
+  results[["empty"]] <- list()
+  expect_error_xl(
+    OmicNavigator:::checkResults(results),
+    "An empty list is not allowed in this context"
+  )
+
+  enrichments <- OmicNavigator:::testEnrichments()
+  enrichments[[1]][["empty"]] <- list()
+  expect_error_xl(
+    OmicNavigator:::checkEnrichments(enrichments),
+    "An empty list is not allowed in this context"
+  )
+
+  plots <- OmicNavigator:::testPlots()
+  plots[["empty"]] <- list()
+  expect_error_xl(
+    OmicNavigator:::checkPlots(plots),
+    "An empty list is not allowed in this context"
+  )
+
+  barcodes <- OmicNavigator:::testBarcodes()
+  barcodes[["empty"]] <- list()
+  expect_error_xl(
+    OmicNavigator:::checkBarcodes(barcodes),
+    "An empty list is not allowed in this context"
+  )
+
+  resultsLinkouts <- OmicNavigator:::testResultsLinkouts()
+  resultsLinkouts[["empty"]] <- list()
+  expect_error_xl(
+    OmicNavigator:::checkResultsLinkouts(resultsLinkouts),
+    "An empty list is not allowed in this context"
+  )
+
+  metaFeaturesLinkouts <- OmicNavigator:::testMetaFeaturesLinkouts()
+  metaFeaturesLinkouts[["empty"]] <- list()
+  expect_error_xl(
+    OmicNavigator:::checkMetaFeaturesLinkouts(metaFeaturesLinkouts),
+    "An empty list is not allowed in this context"
+  )
+})

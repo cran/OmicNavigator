@@ -1,3 +1,92 @@
+# 1.11.5
+
+* The release tarball includes version 1.6.7 of the web app
+
+* Bug fix: Do not allow empty sub-lists when adding elements that require a
+nested list (e.g. `addEnrichments()`). This can cause problems for
+`exportStudy()`/`installStudy()`, and make it appear that data is available when
+there is none (reported by Liang Jin and [Brett
+Engelmann](https://github.com/bengalengel))
+
+# 1.11.3
+
+* The release tarball includes version 1.6.6 of the web app
+
+# 1.11.2
+
+* The release tarball includes version 1.6.5 of the web app
+
+# 1.11.1
+
+* The release tarball includes version 1.6.4 of the web app
+
+* New function `combineStudies()` to combine two or more studies
+
+# 1.10.5
+
+* The release tarball includes version 1.6.3 of the web app
+
+* Update `importStudy()` to support study packages that don't have a Maintainer
+listed. This was only possible prior to version 1.2.0.5. After that, any study
+that hasn't explicitly provided a maintainer (and maintainer email) is assigned
+the maintainer `Unknown <unknown@unknown>` during export. It is highly
+recommended to set the maintainer name and email for any study package that will
+be shared. Furthermore, `exportStudy()` will send a message when no maintainer
+email has been provided for a study package
+
+* Fix infamous `drop = FALSE`
+[bug](http://adv-r.had.co.nz/Subsetting.html#simplify-preserve) in
+`getUpsetCols()`. Previously, if the results tables for a given modelID only had
+two total columns (the featureID column and one data column), `getUpsetCols()`
+returned no common columns, and thus disabled the set interaction features in
+the app (reported by [Brett Engelmann](https://github.com/bengalengel))
+
+# 1.10.4
+
+* The release tarball includes version 1.6.2 of the web app
+
+# 1.10.3
+
+* The release tarball includes version 1.6.1 of the web app
+
+# 1.10.2
+
+* The release tarball includes version 1.6.0 of the web app
+
+* Detect custom plotting functions with `plotType == "plotly"` that don't
+properly return an object with class `"plotly"`
+
+# 1.10.1
+
+* The release tarball includes version 1.5.0 of the web app
+
+# 1.10.0
+
+* Support for custom [plotly][] plots. Include the `plotType` `"plotly"` to add
+custom functions that return interactive plotly graphs (implemented by [Joe
+LoGrasso](https://github.com/joelograsso) in [PR
+#9](https://github.com/abbvie-external/OmicNavigator/pull/9)) Front-end support
+will be added in a future release of the web app
+
+[plotly]: https://cran.r-project.org/package=plotly
+
+* Bug fix: Detach packages in reverse order to avoid dependency conflicts.
+Explanation: when plotting with `plotStudy()`, any required packages are
+attached temporarily and then detached. When one package "Depends" on another
+package (e.g. plotly Depends on ggplot2), the first package must be detached
+before its dependency can be detached. Now this dependency order is taken into
+account when detaching the packages (reported by [Joe
+LoGrasso](https://github.com/joelograsso))
+
+# 1.9.1
+
+* The release tarball includes version 1.4.1 of the web app
+
+* **Breaking change:** The function `plotStudy()` now invisibly returns the
+result from the custom plotting function. Previously it invisibly returned the
+study object. It's unlikely you relied on this behavior. For a ggplot2 plot, the
+return value will be the plotting object with class `"ggplot"`.
+
 # 1.8.0
 
 * Support for new plotType multiModel. This will enable visualizations between
@@ -199,7 +288,7 @@ package. It usually worked before, but now it should always work.
 * New function `installApp()` to download the web app after installing the R
 package
 
-* Support for tibble and data.table input. For consistentcy, they will be be
+* Support for tibble and data.table input. For consistency, they will be be
 automatically converted to pure data frame objects internally.
 
 * Bug fix: `exportStudy()` now properly overwrites an existing tarball when the
@@ -392,7 +481,7 @@ featureIDs are consistent between the results, features, and assays tables
 
 # 0.19.0
 
-* Most package functions now consistenly return empty data structures (e.g.
+* Most package functions now consistently return empty data structures (e.g.
 `list()`) when a query requests data that is unavailable. Previously the
 functions would throw an error if the requested data was unavailable. There is
 a new section in the API vignette documenting this behavior for the functions

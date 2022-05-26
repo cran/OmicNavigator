@@ -24,9 +24,11 @@ left as \code{NULL} (the default), then
 \code{\link{.libPaths}}.}
 }
 \value{
-This function is called for the side effect of creating a plot.
-  However, it also invisible returns the original \code{onStudy} object
-  passed to \code{study}.
+This function is called for the side effect of creating a plot. It
+  invisibly returns the result from the custom plotting function specified by
+  \code{plotID}. Previously it invisibly returned the study object. It's
+  unlikely you relied on this behavior. For a ggplot2 plot, the return value
+  will be the plotting object with class \code{"ggplot"}.
 }
 \description{
 Plot a feature using a custom plotting function
@@ -35,10 +37,7 @@ Plot a feature using a custom plotting function
 The arguments \code{study}, \code{modelID}, \code{featureID}, and
 \code{testID} are passed to the function \code{\link{getPlottingData}}, and
 the nested list returned by this function is passed as the first argument to
-your custom plotting function. By default, the app will pass a single
-featureID unless the plotType is "multiFeature". Similarly, the app will pass
-a single testID unless the plotType is "multiTest". You can specify the
-plotType when you add a plot with \code{\link{addPlots}}.
+your custom plotting function.
 }
 \seealso{
 \code{\link{addPlots}}, \code{\link{getPlottingData}}
