@@ -293,7 +293,7 @@ addTests <- function(study, tests, reset = FALSE) {
 #' @param annotations The annotations used for the enrichment analyses. The
 #'   input is a nested list. The top-level list contains one entry per
 #'   annotation database, e.g. reactome. The names correspond to the name of
-#'   each annotation database. Each of these elements should be list of that
+#'   each annotation database. Each of these elements should be a list that
 #'   contains more information about each annotation database. Specifically the
 #'   sublist should contain 1) \code{description}, a character vector that
 #'   describes the resource, 2) \code{featureID}, the name of the column in the
@@ -411,23 +411,29 @@ addPlots <- function(study, plots, reset = FALSE) {
 
 #' Add mapping object
 #'
-#' Includes a mapping list connecting features across models.
+#' @param mapping Feature IDs from models. The input object is a list of named
+#' data frames. For each data frame, column names indicate model names while
+#' rows indicate featureIDs per model. Features with same index position across
+#' columns are treated as mapped across models. For each model, feature IDs must
+#' match feature IDs available in the results object of the respective model.
+#' 1:N relationships are allowed.
 #'
-#' Mapping object consists of a list with element names matching the model
-#' names, and each element consisting in a vector with feature IDs found in the
-#' result object. For making meaningful connections between models, feature IDs
-#' for distinct models must be aligned per index position in the vector.
+#' Mapping list elements are required to be named as 'default' or after a model
+#' name as provided in addModels(). If a single data frame is provided, this
+#' list element is recommended to be named 'default'. For multiple list
+#' elements, each with its own data frame, list elements should be named after
+#' model name(s) (a single element may still be  named 'default'). In that case,
+#' when navigating in ON front-end (FE), mapping element related to the selected
+#' model in the FE will be used in multimodel plots. If a selected model in FE
+#' does not have a corresponding mapping list element, it may still use the
+#' mapping list element called 'default' if this is available.
+#'
 #' E.g., if in a study there are models "transcriptomics" and "proteomics" and
-#' the user wants to create a plot based on data from both, a mapping list with
-#' element names "transcriptomics" and "proteomics" should be created, where
-#' feature IDs of both models are found in the same index position in each list
-#' element.
-#'
-#' @param mapping Feature IDs from models. The input object is a list object
-#'   with element names matching model names, and each element containing a
-#'   vector with feature IDs per model. Features with same index position across
-#'   models are considered found across models. For each model, the feature IDs
-#'   must match the feature IDs from results object of the respective model.
+#' the user wants to create a plot based on data from both, a mapping list
+#' should be provided with addMapping(). In this case, the mapping list element
+#' may be named 'default'. This should contain a data frame with column names
+#' 'transcriptomics' and 'proteomics', where feature IDs that map across models
+#' are found in the same row.
 #' @inherit shared-add
 #'
 #' @seealso \code{\link{getPlottingData}}, \code{\link{plotStudy}}

@@ -79,8 +79,12 @@ listStudies <- function(libraries = NULL) {
 #'   features table will be character strings, even if the values appear
 #'   numeric.
 #'
+#'   If the optional arguments \code{annotationID} and \code{termID} are
+#'   provided, the table will be filtered to only include features in that
+#'   annotation term.
+#'
 #' @export
-getResultsTable <- function(study, modelID, testID, libraries = NULL) {
+getResultsTable <- function(study, modelID, testID, annotationID = NULL, termID = NULL, libraries = NULL) {
   results <- getResults(study, modelID, testID)
   features <- getFeatures(study, modelID, quiet = TRUE)
 
@@ -94,6 +98,13 @@ getResultsTable <- function(study, modelID, testID, libraries = NULL) {
   columnsOrder <- c(colnames(features),
                     setdiff(colnames(results), colnames(features)))
   resultsTable <- resultsTable[, columnsOrder]
+
+  if (!is.null(annotationID) && !is.null(termID)) {
+    termFeatures <- getNodeFeatures(study, annotationID, termID, libraries = libraries)
+    annotationIDfeatureID <- getAnnotations(study, annotationID = annotationID)[["featureID"]]
+    featureIDcolumn <- which(colnames(resultsTable) == annotationIDfeatureID)
+    resultsTable <- resultsTable[resultsTable[[featureIDcolumn]] %in% termFeatures, ]
+  }
 
   return(resultsTable)
 }
@@ -486,9 +497,6 @@ getPackageVersion <- function() {
 #'
 #' @return The URLs to the favicons for each linkout. The output returned will
 #'   always be the same class and structure as the input.
-#'
-#' @examples
-#'   getFavicons("https://reactome.org/content/detail/")
 #'
 #' @seealso \code{\link{getResultsLinkouts}},
 #'          \code{\link{getEnrichmentsLinkouts}}

@@ -320,25 +320,24 @@ validateMapping <- function(study) {
   # Mapping isn't required
   if (isEmpty(mapping)) return(NA)
 
-  # Check whether mapping names match model names from results table
-  models <- names(study[["results"]])
-  for (i in seq_along(mapping)) {
-    mappingID <- names(mapping[i])
-    if (!mappingID %in% models) {
-      stop("At least one mapping name does not match any model name from results table\n",
-           sprintf("mappingID: %s", mappingID))
-    }
-  }
-
-  # Check whether mapping features match results features
   results <- getResults(study)
+  models  <- names(study[["results"]])
   for (i in seq_along(mapping)) {
-    mappingID <- names(mapping[i])
-    mappingFeatures <- mapping[[i]][which(!is.na(mapping[[i]]))]
-    modelFeatures   <- results[[grep(mappingID, models)]][1][[1]][,1]
-    if (!length(intersect(mappingFeatures, modelFeatures)) > 0) {
-      stop("Mapping features for modelID do not match features from modelID results table\n",
-           sprintf("modelID: %s", mappingID))
+    for (ii in seq_along(mapping[[i]])) {
+      # Check whether mapping names match model names from results table or 'default'
+      mappingID <- names(mapping[[i]][ii])
+      if (!mappingID %in% c(models, "default")) {
+        stop("At least one mapping name is not named as 'default' nor does match any model name from results table.\n",
+             "Shared mapping is required to be named as 'default'.",
+             sprintf("mappingID: %s", mappingID))
+      }
+      # Check whether mapping features match results features
+      mappingFeatures <- mapping[[i]][!is.na(mapping[[i]][,ii]),ii]
+      modelFeatures   <- results[[grep(mappingID, models)]][1][[1]][,1]
+      if (!length(intersect(mappingFeatures, modelFeatures)) > 0) {
+        stop("Mapping features for modelID do not match features from modelID results table\n",
+             sprintf("modelID: %s", mappingID))
+      }
     }
   }
   return(invisible(TRUE))

@@ -57,11 +57,26 @@ resultsTable <- getResultsTable(
   modelID = "model_01",
   testID = "test_01"
 )
+nrow(resultsTable)
 toJSON(resultsTable[1:2, ], pretty = TRUE)
 
 
 ###################################################
-### code chunk number 8: enrichments-table
+### code chunk number 8: results-table-term
+###################################################
+resultsTableTerm <- getResultsTable(
+  study = "ABC",
+  modelID = "model_01",
+  testID = "test_01",
+  annotationID = "annotation_01",
+  termID =  "term_01"
+)
+nrow(resultsTableTerm)
+toJSON(resultsTableTerm[1:2, ], pretty = TRUE)
+
+
+###################################################
+### code chunk number 9: enrichments-table
 ###################################################
 enrichmentsTable <- getEnrichmentsTable(
   study = "ABC",
@@ -72,7 +87,7 @@ toJSON(enrichmentsTable[1:2, ], pretty = TRUE)
 
 
 ###################################################
-### code chunk number 9: enrichments-table-adjusted
+### code chunk number 10: enrichments-table-adjusted
 ###################################################
 enrichmentsTable <- getEnrichmentsTable(
   study = "ABC",
@@ -84,7 +99,7 @@ toJSON(enrichmentsTable[1:2, ], pretty = TRUE)
 
 
 ###################################################
-### code chunk number 10: enrichments-network
+### code chunk number 11: enrichments-network
 ###################################################
 enrichmentsNetwork <- getEnrichmentsNetwork(
   study = "ABC",
@@ -100,7 +115,7 @@ toJSON(enrichmentsNetworkMinimal, auto_unbox = TRUE, pretty = TRUE)
 
 
 ###################################################
-### code chunk number 11: getNodeFeatures
+### code chunk number 12: getNodeFeatures
 ###################################################
 nodeFeatures <- getNodeFeatures(
   study = "ABC",
@@ -111,7 +126,7 @@ toJSON(nodeFeatures[1:4], pretty = TRUE)
 
 
 ###################################################
-### code chunk number 12: getLinkFeatures
+### code chunk number 13: getLinkFeatures
 ###################################################
 linkFeatures <- getLinkFeatures(
   study = "ABC",
@@ -123,7 +138,7 @@ toJSON(linkFeatures[1:4], pretty = TRUE)
 
 
 ###################################################
-### code chunk number 13: plotStudy-plotBase
+### code chunk number 14: plotStudy-plotBase
 ###################################################
 plotStudy(
   study = "ABC",
@@ -135,7 +150,7 @@ plotStudy(
 
 
 ###################################################
-### code chunk number 14: plotStudy-plotGg
+### code chunk number 15: plotStudy-plotGg
 ###################################################
 plotStudy(
   study = "ABC",
@@ -147,7 +162,7 @@ plotStudy(
 
 
 ###################################################
-### code chunk number 15: plotStudy-plotMultiFeature
+### code chunk number 16: plotStudy-plotMultiFeature
 ###################################################
 plotStudy(
   study = "ABC",
@@ -159,7 +174,7 @@ plotStudy(
 
 
 ###################################################
-### code chunk number 16: plotStudy-plotMultiTest
+### code chunk number 17: plotStudy-plotMultiTest
 ###################################################
 plotStudy(
   study = "ABC",
@@ -171,11 +186,10 @@ plotStudy(
 
 
 ###################################################
-### code chunk number 17: plotStudy-plotMultiTest
+### code chunk number 18: plotStudy-plotMultiModel
 ###################################################
 modelID <- c("model_01", "model_02")
 testID <- c("test_01", "test_02")
-names(testID) <- modelID
 
 plotStudy(
   study = "ABC",
@@ -187,7 +201,7 @@ plotStudy(
 
 
 ###################################################
-### code chunk number 18: getResultsIntersection
+### code chunk number 19: getResultsIntersection
 ###################################################
 resultsIntersection <- getResultsIntersection(
   study = "ABC",
@@ -203,7 +217,7 @@ toJSON(resultsIntersection[1:2, ], pretty = TRUE)
 
 
 ###################################################
-### code chunk number 19: getEnrichmentsIntersection
+### code chunk number 20: getEnrichmentsIntersection
 ###################################################
 enrichmentsIntersection <- getEnrichmentsIntersection(
   study = "ABC",
@@ -219,7 +233,7 @@ toJSON(enrichmentsIntersection[1:2, ], pretty = TRUE)
 
 
 ###################################################
-### code chunk number 20: getResultsUpset
+### code chunk number 21: getResultsUpset
 ###################################################
 resultsUpset <- getResultsUpset(
   study = "ABC",
@@ -231,7 +245,7 @@ resultsUpset <- getResultsUpset(
 
 
 ###################################################
-### code chunk number 21: getEnrichmentsUpset
+### code chunk number 22: getEnrichmentsUpset
 ###################################################
 enrichmentsUpset <- getEnrichmentsUpset(
   study = "ABC",
@@ -244,7 +258,7 @@ enrichmentsUpset <- getEnrichmentsUpset(
 
 
 ###################################################
-### code chunk number 22: getUpsetCols
+### code chunk number 23: getUpsetCols
 ###################################################
 upsetCols <- getUpsetCols(
   study = "ABC",
@@ -254,7 +268,7 @@ toJSON(upsetCols, auto_unbox = TRUE, pretty = TRUE)
 
 
 ###################################################
-### code chunk number 23: metaFeatures-table
+### code chunk number 24: metaFeatures-table
 ###################################################
 metaFeaturesTable <- getMetaFeaturesTable(
   study = "ABC",
@@ -265,7 +279,7 @@ toJSON(metaFeaturesTable[1:2, ], pretty = TRUE)
 
 
 ###################################################
-### code chunk number 24: getBarcodeData
+### code chunk number 25: getBarcodeData
 ###################################################
 barcodeData <- getBarcodeData(
   study = "ABC",
@@ -278,7 +292,7 @@ toJSON(barcodeData, auto_unbox = TRUE, pretty = TRUE)
 
 
 ###################################################
-### code chunk number 25: getReportLink-URL
+### code chunk number 26: getReportLink-URL
 ###################################################
 reportLink <- getReportLink(
   study = "ABC",
@@ -288,7 +302,7 @@ toJSON(reportLink, auto_unbox = TRUE, pretty = TRUE)
 
 
 ###################################################
-### code chunk number 26: getReportLink-file
+### code chunk number 27: getReportLink-file
 ###################################################
 reportLink <- getReportLink(
   study = "ABC",
@@ -298,7 +312,7 @@ toJSON(reportLink, auto_unbox = TRUE, pretty = TRUE)
 
 
 ###################################################
-### code chunk number 27: getResultsLinkouts
+### code chunk number 28: getResultsLinkouts
 ###################################################
 resultsLinkouts <- getResultsLinkouts(
   study = "ABC",
@@ -308,7 +322,7 @@ toJSON(resultsLinkouts, auto_unbox = TRUE, pretty = 2)
 
 
 ###################################################
-### code chunk number 28: getEnrichmentsLinkouts
+### code chunk number 29: getEnrichmentsLinkouts
 ###################################################
 enrichmentsLinkouts <- getEnrichmentsLinkouts(
   study = "ABC",
@@ -318,7 +332,7 @@ toJSON(enrichmentsLinkouts, auto_unbox = TRUE, pretty = 2)
 
 
 ###################################################
-### code chunk number 29: getEnrichmentsLinkouts-2
+### code chunk number 30: getEnrichmentsLinkouts-2
 ###################################################
 enrichmentsLinkouts <- getEnrichmentsLinkouts(
   study = "ABC",
@@ -328,7 +342,7 @@ toJSON(enrichmentsLinkouts, auto_unbox = TRUE, pretty = TRUE)
 
 
 ###################################################
-### code chunk number 30: getMetaFeaturesLinkouts
+### code chunk number 31: getMetaFeaturesLinkouts
 ###################################################
 metaFeaturesLinkouts <- getMetaFeaturesLinkouts(
   study = "ABC",
@@ -338,7 +352,7 @@ toJSON(metaFeaturesLinkouts, auto_unbox = TRUE, pretty = 2)
 
 
 ###################################################
-### code chunk number 31: getFavicons
+### code chunk number 32: getFavicons
 ###################################################
 resultsFavicons <- getFavicons(linkouts = resultsLinkouts)
 toJSON(resultsFavicons, auto_unbox = TRUE, pretty = 2)
@@ -347,7 +361,7 @@ toJSON(enrichmentsFavicons, auto_unbox = TRUE, pretty = 2)
 
 
 ###################################################
-### code chunk number 32: unavailable-data
+### code chunk number 33: unavailable-data
 ###################################################
 toJSON(getResultsTable(study = "ABC", modelID = "?", testID = "?"))
 toJSON(getEnrichmentsTable(study = "ABC", modelID = "?", annotationID = "?"))
@@ -370,7 +384,7 @@ toJSON(getEnrichmentsLinkouts(study = "ABC", annotationID = "?"))
 
 
 ###################################################
-### code chunk number 33: getPackageVersion
+### code chunk number 34: getPackageVersion
 ###################################################
 toJSON(getPackageVersion(), auto_unbox = TRUE)
 

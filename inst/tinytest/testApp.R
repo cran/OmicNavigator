@@ -20,6 +20,39 @@ tmpReport <- tempfile(fileext = ".html")
 writeLines("<p>example</p>", tmpReport)
 testStudyObj <- addReports(testStudyObj, list(model_02 = tmpReport))
 
+# Create annotation that uses secondary featureID
+secondaryFeatureIDName <- "secondaryID"
+secondaryID <- getFeatures(testStudyObj)[[1]][[secondaryFeatureIDName]]
+secondaryIDterms <- replicate(
+  n = 10,
+  sample(x = secondaryID, size = sample(5:25, size = 1, replace = TRUE)),
+  simplify = FALSE
+)
+names(secondaryIDterms) <- sprintf("term_%02d", seq_along(secondaryIDterms))
+secondaryIDanno <- list(
+  annotation_04 = list(
+    description = "Annotation that uses a secondary featureID",
+    featureID = secondaryFeatureIDName,
+    terms = secondaryIDterms
+  )
+)
+testStudyObj <- addAnnotations(testStudyObj, secondaryIDanno)
+# just copy subset of enrichments from another annotation
+secondaryIDenrich <- getEnrichments(
+  study = testStudyObj,
+  modelID = "model_01",
+  annotationID = "annotation_01",
+  testID = "test_01"
+)[1:10, ]
+secondaryIDenrich <- list(
+  model_01 = list(
+    annotation_04 = list(
+      test_01 = secondaryIDenrich
+    )
+  )
+)
+testStudyObj <- addEnrichments(testStudyObj, secondaryIDenrich)
+
 tmplib <- tempfile()
 dir.create(tmplib)
 libOrig <- .libPaths()
@@ -145,6 +178,44 @@ expect_error_xl(
 expect_equal_xl(
   resultsTable,
   getResultsTable(testStudyObj, testModelName, testTestName)
+)
+
+# getResultsTable (filtered by annotationID/termID) ----------------------------
+
+resultsTableTerm <- getResultsTable(testStudyName, testModelName, testTestName,
+                                    testAnnotationName, testTermName)
+termFeatures <- getNodeFeatures(testStudyObj, testAnnotationName, testTermName)
+
+expect_identical_xl(
+  class(resultsTableTerm),
+  "data.frame"
+)
+
+expect_identical_xl(
+  sort(resultsTableTerm[[1]]),
+  sort(termFeatures)
+)
+
+# Annotation with alternative featureID
+resultsTableTerm <- getResultsTable(testStudyName, testModelName, testTestName,
+                                    "annotation_04", testTermName)
+termFeatures <- getNodeFeatures(testStudyObj, "annotation_04", testTermName)
+secondaryFeatureIDcol <- which(colnames(resultsTableTerm) == secondaryFeatureIDName)
+
+expect_identical_xl(
+  class(resultsTableTerm),
+  "data.frame"
+)
+
+expect_identical_xl(
+  sort(resultsTableTerm[[secondaryFeatureIDcol]]),
+  sort(termFeatures),
+  info = "Pull results subset from an annotation term that uses an alternative featureID"
+)
+
+expect_equal_xl(
+  nrow(resultsTableTerm),
+  length(termFeatures)
 )
 
 # getEnrichmentsTable ----------------------------------------------------------
@@ -345,6 +416,21 @@ expect_identical_xl(
   info = "Confirm model-specific barcode data returned"
 )
 
+# Confirm that you can use alternative featureID for annotation terms
+barcodeData <- getBarcodeData(
+  testStudyName,
+  testModelName,
+  testTestName,
+  "annotation_04",
+  testTermName
+)
+
+expect_identical_xl(
+  sort(barcodeData[["data"]][["featureEnrichment"]]),
+  sort(getNodeFeatures(testStudyObj, "annotation_04", testTermName)),
+  info = "Pull results subset from an annotation term that uses an alternative featureID"
+)
+
 # getReportLink ----------------------------------------------------------------
 
 expect_identical_xl(
@@ -406,7 +492,7 @@ expect_identical_xl(
 # getFavicons ------------------------------------------------------------------
 
 if (at_home()) {
-  # Only run getFavicons() tests "at home". Accessing internet resources it too
+  # Only run getFavicons() tests "at home". Accessing internet resources is too
   # prone to spurious errors.
 
   expect_identical_xl(

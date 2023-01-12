@@ -1,3 +1,76 @@
+# 1.13.6
+
+* The release tarball includes version 1.7.8 of the web app
+
+# 1.13.5
+
+* The release tarball includes version 1.7.7 of the web app
+
+# 1.13.4
+
+* The release tarball includes version 1.7.6 of the web app
+
+# 1.13.2
+
+* The release tarball includes version 1.7.5 of the web app
+
+* Added optional arguments `annotationID` and `termID` to `getResultsTable()` to
+filter the results table to only include features in a given annotation term
+
+# 1.12.4
+
+* The release tarball includes version 1.7.4 of the web app
+
+# 1.12.3
+
+* The release tarball includes version 1.7.3 of the web app
+
+# 1.12.2
+
+* The release tarball includes version 1.7.2 of the web app
+
+* Update mapping data to behave in the same way as the features, samples, etc.
+Each element of the list must be named after a modelID or "default" to be shared
+across multiple modelIDs (implemented by [Marco
+Curado](https://github.com/curadomr) in [PR
+#12](https://github.com/abbvie-external/OmicNavigator/pull/12))
+
+# 1.12.1
+
+* Bug fix: Support missing values in character columns. Previously they were
+read as empty strings (`""`). This update applies to all new as well as existing
+study packages (ie it is backwards compatible) (reported by [Marco
+Curado](https://github.com/curadomr))
+
+# 1.12.0
+
+* Update `addMapping()` to add the mapping object as a list of data frames,
+where each data frame consists of a distinct mapping. Mapping object is required
+for plots combining features from multiple models (multiModel plots)
+(implemented by [Marco Curado](https://github.com/curadomr) in [PR
+#11](https://github.com/abbvie-external/OmicNavigator/pull/11))
+
+* For multiModel plots, `getPlottingData()` returns a nested list where elements
+are named after modelIDs, and each list element contains at least assays,
+samples and features objects for the given modelID. If testID is passed to the
+function, it also returns the results for the provided testIDs. In this case,
+testID is required to be provided as a vector of the same length of modelID,
+where the index positions indicate which testID relates to which modelID
+(implemented by [Marco Curado](https://github.com/curadomr) in [PR
+#11](https://github.com/abbvie-external/OmicNavigator/pull/11))
+
+# 1.11.8
+
+* The release tarball includes version 1.7.1 of the web app
+
+# 1.11.7
+
+* The release tarball includes version 1.6.9 of the web app
+
+# 1.11.6
+
+* The release tarball includes version 1.6.8 of the web app
+
 # 1.11.5
 
 * The release tarball includes version 1.6.7 of the web app
