@@ -84,7 +84,7 @@ expect_identical_xl(
 )
 
 expect_identical_xl(
-  c("Package", "Title", "Version", "Maintainer", "Description", "OmicNavigatorVersion",
+  c("Package", "Title", "Version", "Maintainer", "Description", "OmicNavigatorVersion", "Encoding",
     names(OmicNavigator:::testStudyMeta()), "Imports", "Built", "description"),
   names(studies[[1]][["package"]]),
   info = "listStudies() returns DESCRIPTION"
@@ -383,7 +383,7 @@ barcodeData <- getBarcodeData(
 
 expect_identical_xl(
   names(barcodeData),
-  c("data", "highest", "labelStat", "labelLow", "labelHigh")
+  c("data", "highest", "lowest", "labelStat", "labelLow", "labelHigh")
 )
 
 expect_identical_xl(
@@ -500,7 +500,7 @@ if (at_home()) {
     list(
       default = list(
         customID = c(
-          "https://ensembl.org/i/ensembl-favicon.png",
+          "https://static.ensembl.org/i/ensembl-favicon.png",
           "https://www.targetvalidation.org/favicon.png"
         ),
         featureVar01 = c(

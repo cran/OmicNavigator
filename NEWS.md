@@ -1,3 +1,84 @@
+# 1.15.0
+
+* Check for invalid names and fix check for empty mapping
+(implemented by [Elyse Geoffroy](https://github.com/ElyseGeoffroy) in [PR #45](https://github.com/abbvie-external/OmicNavigator/pull/45))
+* Check for empty annotation terms
+(implemented by [Elyse Geoffroy](https://github.com/ElyseGeoffroy) in [PR #49](https://github.com/abbvie-external/OmicNavigator/pull/49))
+* Use UTF-8 encoding in study packages to support special characters in description
+(implemented by [Elyse Geoffroy](https://github.com/ElyseGeoffroy) in [PR #52](https://github.com/abbvie-external/OmicNavigator/pull/52))
+* Refresh documentation, tests, and CI workflows
+([John Blischak](https://github.com/jdblischak))
+* Include latest version of web app
+([1.9.8](https://github.com/abbvie-external/OmicNavigatorWebApp/releases/tag/v1.9.8))
+
+# 1.14.19
+
+* The release tarball includes version 1.9.8 of the web app
+
+# 1.14.4 - 1.14.18
+
+* For troubleshooting only
+
+# 1.14.3
+
+* The release tarball includes version 1.9.7 of the web app
+
+# 1.14.2
+
+* The release tarball includes version 1.9.6 of the web app
+
+# 1.14.1
+
+* The release tarball includes version 1.9.5 of the web app
+
+# 1.14.0
+
+* export of model metadata to JSON now follows the convention NA -> null
+
+* Added citation info to package and readme now references journal article
+
+* Update getPlottingData, plotStudy, and addPlots manuals
+
+# 1.13.22
+
+* The release tarball includes version 1.9.4 of the web app
+
+# 1.13.21
+
+* The release tarball includes version 1.9.4 of the web app
+
+# 1.13.20
+
+* The release tarball includes version 1.9.3 of the web app
+
+* Fix bug in `importStudy()` that resulted in mapping table not being imported.
+
+# 1.13.19
+
+* The release tarball includes version 1.9.2 of the web app
+
+# 1.13.18
+
+* The release tarball includes version 1.9.1 of the web app
+
+# 1.13.17
+
+* The release tarball includes version 1.9.0 of the web app
+
+* Update `getBarcodeData()` to pass lowest statistic value. Change enables barcode plot to accommodate negative numbers.
+
+# 1.13.16
+
+* The release tarball includes version 1.8.9 of the web app
+
+# 1.13.15
+
+* The release tarball includes version 1.8.8 of the web app
+
+# 1.13.14
+
+* The release tarball includes version 1.8.7 of the web app
+
 # 1.13.13
 
 * Add the appropriate PKGNAME-package \alias to the package overview help file

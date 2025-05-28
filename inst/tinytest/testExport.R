@@ -20,6 +20,17 @@ dir.create(tmplibSpace)
 tmplibQuote <- file.path(tempdir(), "project's results")
 dir.create(tmplibQuote)
 
+# Export with special encoding description ------------------------------------
+
+specialDesc <- "β‐catenin and neural cell adhesion molecule (NCAM)"
+specialTestStudyObj <- OmicNavigator:::testStudy(name = "ABCspecial",
+                                                 description = specialDesc)
+
+specialPath <- exportStudy(specialTestStudyObj, type = "package", path = tmplib)
+observed <- read.dcf(file.path(specialPath, "DESCRIPTION"), fields = "Description")
+expect_identical_xl(as.character(observed), specialDesc,
+                    info = "Export special character in description field")
+
 # Export as package directory --------------------------------------------------
 
 observed <- exportStudy(testStudyObj, type = "package", path = tmplib)
@@ -51,9 +62,10 @@ expect_true_xl(dir.exists(expected))
 # Export as package tarball ----------------------------------------------------
 
 # These tests fail on all CRAN macOS machines and most CRAN Linux machines. I
-# have no idea why. The call to `R CMD build` looks fine, so I don't know what
-# more I could do on my end to fix the failed tarball creation. I skip them on
-# CRAN but still continue to test locally and on GitHub Actions.
+# have no idea why. They also fail in GitHub Actions. The call to `R CMD build`
+# looks fine, so I don't know what more I could do on my end to fix the failed
+# tarball creation. They are only tested locally when running
+# tinytest::test_all() or tinytest::run_test_file()
 
 if (at_home()) {
   tarball <- exportStudy(testStudyObj, type = "tarball", path = tmplib)
@@ -97,26 +109,18 @@ if (at_home()) {
 
   # Return warning message if package fails to build
   pkgDir <- tempfile(pattern = OmicNavigator:::getPrefix())
-  e <- new.env(parent = emptyenv())
-  # This function gets added to the package with an incomplete Rd file, which
-  # causes an error during the build
-  e$x <- function() 1 + 1
-  suppressMessages(
-    utils::package.skeleton(
-      name = basename(pkgDir),
-      path = tempdir(),
-      environment = e
-    )
-  )
+  dir.create(pkgDir, showWarnings = FALSE, recursive = TRUE)
+  # Use invalid package name to trigger build failure
+  writeLines("Package: 1pkg", con = file.path(pkgDir, "DESCRIPTION"))
 
   expect_warning_xl(
     OmicNavigator:::buildPkg(pkgDir),
-    "ERROR: package installation failed",
+    "Malformed package name",
     info = "Return warning message for failed package build"
   )
 
-  # Remove the problematic man file
-  file.remove(file.path(pkgDir, "man", "x.Rd"))
+  # Fix the problematic package name
+  writeLines("Package: onepkg", con = file.path(pkgDir, "DESCRIPTION"))
 
   expect_silent_xl(
     tarball <- OmicNavigator:::buildPkg(pkgDir)
