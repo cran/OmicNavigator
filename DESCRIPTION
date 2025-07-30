@@ -11,7 +11,7 @@ Description:
   deployed online to be explored by collaborators. The dashboard includes
   'sortable' tables, interactive plots including network visualization, and
   fine-grained filtering based on statistical significance.
-Version: 1.15.0
+Version: 1.16.0
 Authors@R: c(
   person("Terrence", "Ernst", role = c("aut"),
          comment = "Web application"),
@@ -49,7 +49,7 @@ Suggests: faviconPlease, ggplot2, opencpu, plotly, tinytest (>= 1.2.3),
         ttdo (>= 0.0.6), UpSetR
 RoxygenNote: 7.3.2
 NeedsCompilation: no
-Packaged: 2025-05-28 19:25:57 UTC; john
+Packaged: 2025-07-30 14:40:44 UTC; john
 Author: Terrence Ernst [aut] (Web application),
   John Blischak [aut, cre] (ORCID:
     <https://orcid.org/0000-0003-2634-9879>),
@@ -64,4 +64,4 @@ Author: Terrence Ernst [aut] (Web application),
   AbbVie Inc. [cph, fnd]
 Maintainer: John Blischak <jdblischak@gmail.com>
 Repository: CRAN
-Date/Publication: 2025-05-28 19:40:02 UTC
+Date/Publication: 2025-07-30 15:00:02 UTC
