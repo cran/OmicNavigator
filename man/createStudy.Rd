@@ -23,6 +23,8 @@ createStudy(
   resultsLinkouts = list(),
   enrichmentsLinkouts = list(),
   metaFeaturesLinkouts = list(),
+  metaAssays = list(),
+  objects = list(),
   version = NULL,
   maintainer = NULL,
   maintainerEmail = NULL,
@@ -67,7 +69,10 @@ names should be the testIDs. The value should be a single character string
 describing the testID. To share tests across multiple models, use the
 modelID "default". Instead of a single character string, you can provide a
 list of metadata fields about each test. The field "description" will be
-used to derive the tooltip displayed in the app.}
+used to derive the tooltip displayed in the app. Furthermore, any fields
+that match the column names in the results table (added via
+\code{\link{addFeatures}} or \code{\link{addResults}}) will be used to
+derive tooltips for those columns.}
 
 \item{annotations}{The annotations used for the enrichment analyses. The
 input is a nested list. The top-level list contains one entry per
@@ -102,9 +107,11 @@ adjusting for multiple testing). Any additional columns are ignored.}
 the study. The input object is a list of data frames (one per model). The
 first column of each data frame is used as the featureID, so it must
 contain the same IDs as the corresponding features data frame
-(\code{\link{addFeatures}}). To share a data frame across multiple models,
-use the modelID "default". All columns will be coerced to character
-strings.}
+(\code{\link{addFeatures}}). The second column of each data frame is used
+as the metaFeatureID, and thus should match the row names of any metaAssays
+added via \code{\link{addMetaAssays}}. To share a data frame across
+multiple models, use the modelID "default". All columns will be coerced to
+character strings.}
 
 \item{plots}{A nested list containing custom plotting functions and plot
 metadata. The input object is a 3-level nested list. The first, or
@@ -207,6 +214,18 @@ is a named list of character vectors. The names of this nested list must
 correspond to the column names of the matching metaFeatures table (\code{\link{addMetaFeatures}}). To share
 linkouts across multiple models, use the modelID "default".}
 
+\item{metaAssays}{The metaAssays from the study. The input object is a list
+of data frames (one per model). The row names should correspond to the
+metaFeatureIDs (second column of data frame added via
+\code{\link{addMetaFeatures}}). The column names should correspond to the
+sampleIDs (\code{\link{addSamples}}). The data frame should only contain
+numeric values. To share a data frame across multiple models, use the
+modelID "default".}
+
+\item{objects}{Any arbitrary R objects from the study. The input object is a
+list of objects (one per model). To share an object across multiple models,
+use the modelID "default".}
+
 \item{version}{(Optional) Include a version number to track the updates to
 your study package. If you export the study to a package, the version is
 used as the package version.}
@@ -268,6 +287,8 @@ study <- createStudy(name = "ABC",
 \code{\link{addResultsLinkouts}},
 \code{\link{addEnrichmentsLinkouts}},
 \code{\link{addMetaFeaturesLinkouts}},
+\code{\link{addMetaAssays}},
+\code{\link{addObjects}},
 \code{\link{exportStudy}},
 \code{\link{installStudy}}
 }

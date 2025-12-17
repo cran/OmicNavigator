@@ -1,18 +1,30 @@
 #' Get installed OmicNavigator studies
 #'
-#' @param libraries Character vector of library directories to search for study
-#'   packages. If \code{NULL}, uses \code{.libPaths}.
+#' @param hasElements Character vector of elements that must be present in the
+#'   study packages. Valid elements are 'metaFeatures', 'results',
+#'   'enrichments', 'reports', 'plots', 'assays', 'samples', 'features',
+#'   'resultsLinkouts', and 'metaAssays'. If \code{NULL} (default), then all
+#'   installed OmicNavigator studies are returned, regardless of their contents.
+#' @inheritParams shared-get
 #'
 #' @return Returns a character vector of the installed OmicNavigator study
 #'   packages
 #'
+#' @seealso
+#'   \code{\link{getResultsStudies}},
+#'   \code{\link{getEnrichmentsStudies}}
+#'
 #' @export
-getInstalledStudies <- function(libraries = NULL) {
-  pkgsAll <- rownames(utils::installed.packages(lib.loc = libraries))
+getInstalledStudies <- function(hasElements = NULL, libraries = NULL) {
+  pkgsAll <- rownames(installed.packages(lib.loc = libraries))
   names(pkgsAll) <- NULL
   regex <- getPrefix(regex = TRUE)
-  pkgsOa <- grep(regex, pkgsAll, value = TRUE)
-  studies <- pkgToStudy(pkgsOa)
+  pkgsOn <- grep(regex, pkgsAll, value = TRUE)
+
+  if (!isEmpty(hasElements)) {
+    pkgsOn <- getStudiesWithElements(pkgsOn, hasElements, libraries = libraries)
+  }
+  studies <- pkgToStudy(pkgsOn)
   studies <- sort(studies)
 
   return(studies)
@@ -31,6 +43,8 @@ getInstalledStudies <- function(libraries = NULL) {
 #' @param featureID Filter by featureID
 #' @param plotID Filter by plotID
 #' @param quiet Suppress messages (default: \code{FALSE})
+#' @param libraries Character vector of library directories to search for study
+#'   packages. If \code{NULL}, uses \code{.libPaths}.
 #'
 #' @return The object returned depends on the data available and any filters
 #'   (e.g. the argument  \code{modelID}):
@@ -50,7 +64,8 @@ NULL
 #' Get models from a study
 #'
 #' @inherit shared-get
-#' @inheritParams listStudies
+#'
+#' @seealso \code{\link{addModels}}
 #'
 #' @export
 getModels <- function(study, modelID = NULL, quiet = FALSE, libraries = NULL) {
@@ -67,7 +82,8 @@ getModels <- function(study, modelID = NULL, quiet = FALSE, libraries = NULL) {
 #' Get samples from a study
 #'
 #' @inherit shared-get
-#' @inheritParams listStudies
+#'
+#' @seealso \code{\link{addSamples}}
 #'
 #' @export
 getSamples <- function(study, modelID = NULL, quiet = FALSE, libraries = NULL) {
@@ -84,11 +100,12 @@ getSamples <- function(study, modelID = NULL, quiet = FALSE, libraries = NULL) {
 #' Get features from a study
 #'
 #' @inherit shared-get
-#' @inheritParams listStudies
 #'
 #' @return A data frame (if \code{modelID} is specified) or a list of data
 #'   frames. All the columns will be character strings, even if the values
 #'   appear numeric.
+#'
+#' @seealso \code{\link{addFeatures}}
 #'
 #' @export
 getFeatures <- function(study, modelID = NULL, quiet = FALSE, libraries = NULL) {
@@ -106,7 +123,8 @@ getFeatures <- function(study, modelID = NULL, quiet = FALSE, libraries = NULL) 
 #' Get assays from a study
 #'
 #' @inherit shared-get
-#' @inheritParams listStudies
+#'
+#' @seealso \code{\link{addAssays}}
 #'
 #' @export
 getAssays <- function(study, modelID = NULL, quiet = FALSE, libraries = NULL) {
@@ -128,7 +146,8 @@ getAssays <- function(study, modelID = NULL, quiet = FALSE, libraries = NULL) {
 #' Get tests from a study
 #'
 #' @inherit shared-get
-#' @inheritParams listStudies
+#'
+#' @seealso \code{\link{addTests}}
 #'
 #' @export
 getTests <- function(study, modelID = NULL, testID = NULL, quiet = FALSE, libraries = NULL) {
@@ -150,7 +169,8 @@ getTests <- function(study, modelID = NULL, testID = NULL, quiet = FALSE, librar
 #' Get annotations from a study
 #'
 #' @inherit shared-get
-#' @inheritParams listStudies
+#'
+#' @seealso \code{\link{addAnnotations}}
 #'
 #' @export
 getAnnotations <- function(study, annotationID = NULL, quiet = FALSE, libraries = NULL) {
@@ -167,7 +187,8 @@ getAnnotations <- function(study, annotationID = NULL, quiet = FALSE, libraries 
 #' Get overlaps from a study
 #'
 #' @inherit shared-get
-#' @inheritParams listStudies
+#'
+#' @seealso \code{\link{addOverlaps}}
 #'
 #' @export
 getOverlaps <- function(study, annotationID = NULL, quiet = FALSE, libraries = NULL) {
@@ -183,7 +204,8 @@ getOverlaps <- function(study, annotationID = NULL, quiet = FALSE, libraries = N
 #' Get results from a study
 #'
 #' @inherit shared-get
-#' @inheritParams listStudies
+#'
+#' @seealso \code{\link{addResults}}
 #'
 #' @export
 getResults <- function(study, modelID = NULL, testID = NULL, quiet = FALSE, libraries = NULL) {
@@ -204,7 +226,8 @@ getResults <- function(study, modelID = NULL, testID = NULL, quiet = FALSE, libr
 #' Get enrichments from a study
 #'
 #' @inherit shared-get
-#' @inheritParams listStudies
+#'
+#' @seealso \code{\link{addEnrichments}}
 #'
 #' @export
 getEnrichments <- function(study, modelID = NULL, annotationID = NULL, testID = NULL, quiet = FALSE, libraries = NULL) {
@@ -230,7 +253,8 @@ getEnrichments <- function(study, modelID = NULL, annotationID = NULL, testID = 
 #' Get metaFeatures from a study
 #'
 #' @inherit shared-get
-#' @inheritParams listStudies
+#'
+#' @seealso \code{\link{addMetaFeatures}}
 #'
 #' @export
 getMetaFeatures <- function(study, modelID = NULL, quiet = FALSE, libraries = NULL) {
@@ -248,7 +272,8 @@ getMetaFeatures <- function(study, modelID = NULL, quiet = FALSE, libraries = NU
 #' Get plots from a study
 #'
 #' @inherit shared-get
-#' @inheritParams listStudies
+#'
+#' @seealso \code{\link{addPlots}}
 #'
 #' @export
 getPlots <- function(study, modelID = NULL, quiet = FALSE, libraries = NULL) {
@@ -266,7 +291,8 @@ getPlots <- function(study, modelID = NULL, quiet = FALSE, libraries = NULL) {
 #' Get mapping object from a study
 #'
 #' @inherit shared-get
-#' @inheritParams listStudies
+#'
+#' @seealso \code{\link{addMapping}}
 #'
 #' @export
 getMapping <- function(study, modelID = NULL, quiet = FALSE, libraries = NULL) {
@@ -283,7 +309,8 @@ getMapping <- function(study, modelID = NULL, quiet = FALSE, libraries = NULL) {
 #' Get barcodes from a study
 #'
 #' @inherit shared-get
-#' @inheritParams listStudies
+#'
+#' @seealso \code{\link{addBarcodes}}
 #'
 #' @export
 getBarcodes <- function(study, modelID = NULL, quiet = FALSE, libraries = NULL) {
@@ -301,7 +328,8 @@ getBarcodes <- function(study, modelID = NULL, quiet = FALSE, libraries = NULL) 
 #' Get reports from a study
 #'
 #' @inherit shared-get
-#' @inheritParams listStudies
+#'
+#' @seealso \code{\link{addReports}}
 #'
 #' @export
 getReports <- function(study, modelID = NULL, quiet = FALSE, libraries = NULL) {
@@ -319,7 +347,8 @@ getReports <- function(study, modelID = NULL, quiet = FALSE, libraries = NULL) {
 #' Get results table linkouts from a study
 #'
 #' @inherit shared-get
-#' @inheritParams listStudies
+#'
+#' @seealso \code{\link{addResultsLinkouts}}
 #'
 #' @export
 getResultsLinkouts <- function(study, modelID = NULL, quiet = FALSE, libraries = NULL) {
@@ -337,7 +366,8 @@ getResultsLinkouts <- function(study, modelID = NULL, quiet = FALSE, libraries =
 #' Get enrichments table linkouts from a study
 #'
 #' @inherit shared-get
-#' @inheritParams listStudies
+#'
+#' @seealso \code{\link{addEnrichmentsLinkouts}}
 #'
 #' @export
 getEnrichmentsLinkouts <- function(study, annotationID = NULL, quiet = FALSE, libraries = NULL) {
@@ -354,7 +384,8 @@ getEnrichmentsLinkouts <- function(study, annotationID = NULL, quiet = FALSE, li
 #' Get metaFeatures table linkouts from a study
 #'
 #' @inherit shared-get
-#' @inheritParams listStudies
+#'
+#' @seealso \code{\link{addMetaFeaturesLinkouts}}
 #'
 #' @export
 getMetaFeaturesLinkouts <- function(study, modelID = NULL, quiet = FALSE, libraries = NULL) {
@@ -369,13 +400,52 @@ getMetaFeaturesLinkouts <- function(study, modelID = NULL, quiet = FALSE, librar
   )
 }
 
-# ... Arguments passed to either data.table::fread() or jsonlite::read_json()
+#' Get metaAssays from a study
+#'
+#' @inherit shared-get
+#'
+#' @seealso \code{\link{addMetaAssays}}
+#'
+#' @export
+getMetaAssays <- function(study, modelID = NULL, quiet = FALSE, libraries = NULL) {
+  getElements(
+    study,
+    elements = "metaAssays",
+    filters = list(modelID = modelID),
+    default = "default",
+    quiet = quiet,
+    libraries = libraries,
+    hasRowNames = TRUE,
+    colClasses = list(character = 1)
+  )
+}
+
+#' Get objects from a study
+#'
+#' @inherit shared-get
+#'
+#' @seealso \code{\link{addObjects}}
+#'
+#' @export
+getObjects <- function(study, modelID = NULL, quiet = FALSE, libraries = NULL) {
+  getElements(
+    study,
+    elements = "objects",
+    filters = list(modelID = modelID),
+    default = "default",
+    fileType = "rds",
+    quiet = quiet,
+    libraries = libraries
+  )
+}
+
+# ... Arguments passed to either fread() or read_json() or readRDS()
 getElements <- function(
   study,
   elements,
   filters = list(),
   default = NULL,
-  fileType = c("txt", "json"),
+  fileType = c("txt", "json", "rds"),
   quiet = FALSE,
   libraries = NULL,
   ...
@@ -411,7 +481,7 @@ getElements.onStudy <- function(
   elements,
   filters = list(),
   default = NULL,
-  fileType = c("txt", "json"),
+  fileType = c("txt", "json", "rds"),
   quiet = FALSE,
   libraries = NULL,
   ...
@@ -453,7 +523,7 @@ getElements.character <- function(
   elements,
   filters = list(),
   default = NULL,
-  fileType = c("txt", "json"),
+  fileType = c("txt", "json", "rds"),
   quiet = FALSE,
   libraries = NULL,
   ...
@@ -471,7 +541,7 @@ getElements.character <- function(
                                 study, elements))
     return(list())
   }
-  fileType <- match.arg(fileType, c("txt", "json"))
+  fileType <- match.arg(fileType)
   elementsFiles <- getFiles(elementsDirectory, fileType = fileType)
 
   if (isEmpty(elementsFiles)) {
@@ -499,7 +569,7 @@ getElements.character <- function(
     }
   }
 
-  readFunction <- if (fileType == "txt") readTable else readJson
+  readFunction <- switch(fileType, txt = readTable, json = readJson, rds = readRDS)
   if (is.list(elementsFiles)) {
     object <- rapply(elementsFiles, readFunction, how = "replace", ...)
   } else {
@@ -521,7 +591,7 @@ getFiles <- function(path, fileType = "txt") {
     contentsNames <- basename(contents)
     extensionRegEx <- sprintf("\\.%s$", fileType)
     contentsNames <- sub(extensionRegEx, "", contentsNames)
-    stats::setNames(lapply(contents, getFiles, fileType = fileType), contentsNames)
+    setNames(lapply(contents, getFiles, fileType = fileType), contentsNames)
   } else {
     path
   }

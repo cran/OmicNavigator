@@ -105,3 +105,11 @@ sanitizeEnrichmentsLinkouts <- function(enrichmentsLinkouts) {
 sanitizeMetaFeaturesLinkouts <- function(metaFeaturesLinkouts) {
   return(metaFeaturesLinkouts)
 }
+
+sanitizeMetaAssays <- function(metaAssays) {
+  return(metaAssays)
+}
+
+sanitizeObjects <- function(objects) {
+  return(objects)
+}

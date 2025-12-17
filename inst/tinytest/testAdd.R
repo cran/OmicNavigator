@@ -60,6 +60,12 @@ study <- addEnrichmentsLinkouts(study, enrichmentsLinkouts = enrichmentsLinkouts
 metaFeaturesLinkouts <- OmicNavigator:::testMetaFeaturesLinkouts()
 study <- addMetaFeaturesLinkouts(study, metaFeaturesLinkouts = metaFeaturesLinkouts)
 
+metaAssays <- OmicNavigator:::testMetaAssays()
+study <- addMetaAssays(study, metaAssays = metaAssays)
+
+objects <- OmicNavigator:::testObjects()
+study <- addObjects(study, objects = objects)
+
 expect_identical_xl(
   study,
   OmicNavigator:::testStudy(name = "test")
@@ -70,16 +76,25 @@ expect_identical_xl(
 plots <- OmicNavigator:::testPlots()
 study <- addPlots(study, plots = plots)
 
-suppressMessages(
-  OmicNavigator::exportStudy(study, type = "package", path = tmplib)
+expect_message_xl(
+  OmicNavigator::exportStudy(study, type = "package", path = tmplib),
+  "Calculating pairwise overlaps. This may take a while..."
 )
 
 # Export again with overlaps pre-calculated
-suppressMessages(
-  study <- addOverlaps(study)
+expect_message_xl(
+  study <- addOverlaps(study),
+  "Calculating pairwise overlaps. This may take a while..."
 )
-suppressMessages(
-  OmicNavigator::exportStudy(study, type = "package", path = tmplib)
+
+exportMsg <- capture.output(
+  OmicNavigator::exportStudy(study, type = "package", path = tmplib),
+  type = "message"
+)
+
+expect_false_xl(
+  any(grepl("Calculating pairwise overlaps. This may take a while...", exportMsg)),
+  info = "Overlaps should not be calculated on export if already pre-calculated"
 )
 
 # Confirm that addOverlaps() can use `reset` argument

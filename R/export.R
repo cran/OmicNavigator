@@ -56,14 +56,34 @@ buildPkg <- function(pkgDir) {
     stdout = TRUE,
     stderr = NULL
   )
+
   # Display stdout if anything went wrong
   if (!is.null(attr(stdout, "status"))) {
     warning(paste(stdout, collapse = "\n"))
   }
-  regex <- sprintf("%s.*\\.tar\\.gz", getPrefix())
+
+  tarball <- extractTarballName(stdout)
+  return(invisible(tarball))
+}
+
+# Extract the tarball name from the last line of stdout returned by `R CMD build`
+#
+# eg
+#
+# * building '{Package}_{Version}.tar.gz'
+#
+# The format of the output string is very stable!
+# https://github.com/r-devel/r-svn/blob/2377495b7f412888abb81f7b5658bdf5e5f4c6c2/src/library/tools/R/build.R#L1252
+extractTarballName <- function(stdout) {
+  regex <- "[^']*\\.tar\\.gz"
   regexMatch <- regexpr(regex, stdout[length(stdout)])
   tarball <- regmatches(stdout[length(stdout)], regexMatch)
-  return(invisible(tarball))
+
+  if (isEmpty(tarball)) {
+    warning("Unable to determine name of tarball after build")
+  }
+
+  return(tarball)
 }
 
 createTextFiles <- function(study, directoryname, calcOverlaps = FALSE) {
@@ -85,7 +105,8 @@ createTextFiles <- function(study, directoryname, calcOverlaps = FALSE) {
   exportResultsLinkouts(study, directoryname)
   exportEnrichmentsLinkouts(study, directoryname)
   exportMetaFeaturesLinkouts(study, directoryname)
-  exportSummary(study, directoryname)
+  exportMetaAssays(study, directoryname)
+  exportObjects(study, directoryname)
   if (calcOverlaps) study <- addOverlaps(study)
   exportOverlaps(study, directoryname)
 }
@@ -94,7 +115,7 @@ exportElements <- function(
   study,
   elements,
   path = ".",
-  fileType = c("txt", "json"),
+  fileType = c("txt", "json", "rds"),
   hasRowNames = FALSE,
   nested = 0,
   ...
@@ -135,19 +156,23 @@ exportElements <- function(
 exportElementsWrite <- function(
   x,
   path = ".",
-  fileType = c("txt", "json"),
+  fileType = c("txt", "json", "rds"),
   hasRowNames = FALSE,
   ...
 )
 {
+  fileType <- match.arg(fileType)
   for (i in seq_along(x)) {
     fileName <- file.path(path, names(x)[i])
     if (fileType == "txt") {
       fileName <- paste0(fileName, ".txt")
       writeTable(x[[i]], file = fileName, row.names = hasRowNames)
-    } else {
+    } else if (fileType == "json") {
       fileName <- paste0(fileName, ".json")
       writeJson(x[[i]], file = fileName, ...)
+    } else if (fileType == "rds") {
+      fileName <- paste0(fileName, ".rds")
+      saveRDS(x[[i]], file = fileName, ...)
     }
   }
 }
@@ -294,96 +319,13 @@ exportMetaFeaturesLinkouts <- function(study, path = ".") {
   )
 }
 
-exportSummary <- function(x, path = ".") {
-
-  resultsModels <- names(x[["results"]])
-  enrichmentsModels <- names(x[["enrichments"]])
-  # Plots can be shared across models using modelID "default". Thus need to
-  # consider all models that have inference results or enrichments available.
-  plotsModels <- unique(c(resultsModels, enrichmentsModels))
-
-  output <- list(
-    results = vector("list", length(resultsModels)),
-    enrichments = vector("list", length(enrichmentsModels)),
-    plots = vector("list", length(plotsModels))
+exportMetaAssays <- function(study, path = ".") {
+  exportElements(
+    study,
+    elements = "metaAssays",
+    path = path,
+    hasRowNames = TRUE
   )
-
-  for (i in seq_along(resultsModels)) {
-    modelID <- resultsModels[i]
-    modelDisplay <- getModels(x, modelID = modelID, quiet = TRUE)
-    # The tooltip is either added as a single string per modelID, or as a named
-    # list with other metadata fields, where the field "description" is the
-    # metadata field
-    if (is.list(modelDisplay)) modelDisplay <- modelDisplay[["description"]]
-    if (isEmpty(modelDisplay)) modelDisplay <- modelID
-    output[["results"]][[i]] <- list(
-      modelID = modelID,
-      modelDisplay = modelDisplay
-    )
-    modelTests <- names(x[["results"]][[modelID]])
-    output[["results"]][[i]][["tests"]] <- vector("list", length(modelTests))
-    for (j in seq_along(modelTests)) {
-      testID <- modelTests[j]
-      testDisplay <- getTests(x, modelID = modelID, testID = testID, quiet = TRUE)
-      # The tooltip is either added as a single string per testID, or as a named
-      # list with other metadata fields, where the field "description" is the
-      # metadata field
-      if (is.list(testDisplay)) testDisplay <- testDisplay[["description"]]
-      if (isEmpty(testDisplay)) testDisplay <- testID
-      output[["results"]][[i]][["tests"]][[j]] <- list(
-        testID = testID,
-        testDisplay = testDisplay
-      )
-    }
-  }
-
-  for (i in seq_along(enrichmentsModels)) {
-    modelID <- enrichmentsModels[i]
-    modelDisplay <- getModels(x, modelID = modelID, quiet = TRUE)
-    if (isEmpty(modelDisplay)) modelDisplay <- modelID
-    output[["enrichments"]][[i]] <- list(
-      modelID = modelID,
-      modelDisplay = modelDisplay
-    )
-    modelAnnotations <- names(x[["enrichments"]][[modelID]])
-    output[["enrichments"]][[i]][["annotations"]] <- vector("list", length(modelAnnotations))
-    for (j in seq_along(modelAnnotations)) {
-      annotationID <- modelAnnotations[j]
-      annotationDisplay <- getAnnotations(x, annotationID = annotationID, quiet = TRUE)[["description"]]
-      if (isEmpty(annotationDisplay)) annotationDisplay <- annotationID
-      output[["enrichments"]][[i]][["annotations"]][[j]] <- list(
-        annotationID = annotationID,
-        annotationDisplay = annotationDisplay
-      )
-    }
-  }
-
-  for (i in seq_along(plotsModels)) {
-    modelID <- plotsModels[i]
-    modelDisplay <- getModels(x, modelID = modelID, quiet = TRUE)
-    if (isEmpty(modelDisplay)) modelDisplay <- modelID
-    output[["plots"]][[i]] <- list(
-      modelID = modelID,
-      modelDisplay = modelDisplay
-    )
-    modelPlots <- getPlots(x, modelID = modelID, quiet = TRUE)
-    output[["plots"]][[i]][["plots"]] <- vector("list", length(modelPlots))
-    for (j in seq_along(modelPlots)) {
-      plotID <- names(modelPlots)[j]
-      plotDisplay = modelPlots[[j]][["displayName"]]
-      if (isEmpty(plotDisplay)) plotDisplay <- plotID
-      plotType <- modelPlots[[j]][["plotType"]]
-      if (isEmpty(plotType)) plotType <- "singleFeature"
-      output[["plots"]][[i]][["plots"]][[j]] <- list(
-        plotID = plotID,
-        plotDisplay = plotDisplay,
-        plotType = plotType
-      )
-    }
-  }
-
-  fileName <- file.path(path, "summary.json")
-  writeJson(output, file = fileName)
 }
 
 exportOverlaps <- function(study, path = ".") {
@@ -391,6 +333,16 @@ exportOverlaps <- function(study, path = ".") {
     study,
     elements = "overlaps",
     path = path
+  )
+}
+
+exportObjects <- function(study, path = ".", ...) {
+  exportElements(
+    study,
+    elements = "objects",
+    path = path,
+    fileType = "rds",
+    ...
   )
 }
 
@@ -426,7 +378,7 @@ createPackage <- function(study, directoryname) {
     Version = pkgversion,
     Maintainer = pkgmaintainer,
     Description = pkgdescription,
-    OmicNavigatorVersion = utils::packageVersion("OmicNavigator"),
+    OmicNavigatorVersion = packageVersion("OmicNavigator"),
     Encoding = "UTF-8",
     stringsAsFactors = FALSE
   )
@@ -449,7 +401,7 @@ createPackage <- function(study, directoryname) {
       if (!isUrl(report)) {
         newPath <- file.path(reportsdir, modelID)
         dir.create(newPath, showWarnings = FALSE, recursive = TRUE)
-        fileExtension <- tools::file_ext(report)
+        fileExtension <- file_ext(report)
         newFile <- paste0("report.", fileExtension)
         newPath <- file.path(newPath, newFile)
         file.copy(report, newPath)
@@ -465,8 +417,10 @@ createPackage <- function(study, directoryname) {
   # Data
   datadir <- file.path(directoryname, "inst", "OmicNavigator")
   dir.create(datadir, showWarnings = FALSE, recursive = TRUE)
-  annotations <- study[["annotations"]]
-  createTextFiles(study, datadir, calcOverlaps = !isEmpty(annotations))
+  # Only calculate overlaps if annotations are available and overlaps have
+  # not been pre-calculated
+  calcOverlaps = !isEmpty(study[["annotations"]]) && isEmpty(study[["overlaps"]])
+  createTextFiles(study, datadir, calcOverlaps = calcOverlaps)
 
   # Plots
   if (!isEmpty(study[["plots"]])) {
@@ -556,7 +510,7 @@ installStudy <- function(study, requireValid = TRUE, library = .libPaths()[1]) {
   optionWarn <- getOption("warn", default = 0)
   on.exit(options(warn = optionWarn), add = TRUE)
   options(warn = 2) # warnings are errors
-  utils::install.packages(
+  install.packages(
     tmpPkgDir,
     lib = library,
     repos = NULL,
@@ -605,7 +559,7 @@ removeStudy <- function(study, library = .libPaths()[1]) {
     message("Removing study package ", packagePath)
   }
 
-  utils::remove.packages(
+  remove.packages(
     pkgs = package,
     lib = library
   )

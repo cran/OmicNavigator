@@ -1,3 +1,10 @@
+# The checkX() functions are executed when a new element is added via the
+# corresponding addX() function. Since elements can be added to a study in any
+# arbitrary order, the checks only focus on the current element. Thus they check
+# for structural characteristics like the class and dimensions. The concordance
+# between elements is validated by the validateX() functions in validate.R when
+# the study is exported/installed.
+
 checkNamingConvention <- function(featureObjectName, attr) {
    # Check study name, models, and tests
    forbidden <- c("^", ":", "*", "\\",  ">", "<", "$", "|", "?", "/")
@@ -258,11 +265,39 @@ checkAssays <- function(assays) {
       nrow(assays[[i]]) > 0,
       ncol(assays[[i]]) > 0
     )
+    # Warn if row names are unlikely to be the featureIDs
+    rows <- row.names(assays[[i]])
+    if (identical(rows, as.character(seq_along(rows)))) {
+      warning(
+        "The row names of the assays data frame should be the featureIDs.\n",
+        sprintf("Problematic modelID: %s", names(assays)[i])
+      )
+    }
     # All the columns must be numeric
     colsAllNum <- all(vapply(assays[[i]], is.numeric, logical(1)))
     if (!colsAllNum) {
       stop("The columns of the assays data frame must all be numeric.\n",
            sprintf("Problematic modelID: %s", names(assays)[i]))
+    }
+  }
+
+  return(NULL)
+}
+
+checkMetaAssays <- function(metaAssays) {
+  checkList(metaAssays)
+
+  for (i in seq_along(metaAssays)) {
+    stopifnot(
+      inherits(metaAssays[[i]], "data.frame"),
+      nrow(metaAssays[[i]]) > 0,
+      ncol(metaAssays[[i]]) > 0
+    )
+    # All the columns must be numeric
+    colsAllNum <- all(vapply(metaAssays[[i]], is.numeric, logical(1)))
+    if (!colsAllNum) {
+      stop("The columns of the metaAssays data frame must all be numeric.\n",
+           sprintf("Problematic modelID: %s", names(metaAssays)[i]))
     }
   }
 
@@ -429,6 +464,17 @@ checkPlots <- function(plots) {
       if (is.null(plotEntry[["displayName"]])) {
         stop(sprintf("Must define displayName for plot \"%s\"", plotID))
       }
+      # For multiModel plots, check if field 'models' is available and, if so,
+      # check if models != 'all' is associated with plotType multiModel
+      if (!is.null(plotEntry[["models"]])) {
+        models <- plotEntry[["models"]]
+        if ((length(models) > 1 || models != 'all') && !any(plotEntry[["plotType"]] %in% "multiModel")) {
+          stop(
+            sprintf("For field models != 'all' plotType field requires 'multiModel'.\n"),
+            sprintf("The custom plot \"%s\" has models \"%s\" and plotType \"%s\".", plotID, paste(c(models), collapse=', '), paste(c(plotEntry[["plotType"]]), collapse=', '))
+          )
+        }
+      }
     }
   }
 
@@ -558,3 +604,19 @@ checkMetaFeaturesLinkouts <- function(metaFeaturesLinkouts) {
   return(NULL)
 }
 
+checkObjects <- function(objects) {
+  checkList(objects)
+
+  for (i in seq_along(objects)) {
+    # If in the future we want to support a list of objects per modelID, then
+    # the object itself can't be a simple list object
+    if (inherits(objects[[i]], "list", which = TRUE) == 1) {
+      stop(sprintf(
+        "modelID %s: The object must have a custom class to distinguish it from a list",
+        names(objects)[i]
+      ))
+    }
+  }
+
+  return(NULL)
+}

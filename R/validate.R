@@ -1,3 +1,15 @@
+# The validateX() functions are run when a study has been finalized and is being
+# exported and/or installed. They validate that the elements are concordant with
+# each other, for example, that the featureIDs are consistent between the
+# results, features, and metaFeatures tables.
+#
+# In general, the goal is to assist the user to create a valid study that will
+# work as intended when investigated via the app. Errors are only thrown when
+# a large problem is detected. For less severe problems, only a message/warning
+# is emitted to alert the user.
+#
+# Because all the elements are optional, some of the validations may be
+# redundant.
 
 #' Validate a study
 #'
@@ -15,7 +27,7 @@ validateStudy <- function(study) {
   elements <- names(study)[!emptyElements]
   for (e in elements) {
     checkFunctionName <- paste0("check", capitalize(e))
-    checkFunction <- utils::getFromNamespace(checkFunctionName, ns = "OmicNavigator")
+    checkFunction <- getFromNamespace(checkFunctionName, ns = "OmicNavigator")
     checkFunction(study[[e]])
   }
 
@@ -24,6 +36,7 @@ validateStudy <- function(study) {
   validateEnrichmentsLinkouts(study)
   validatePlots(study)
   validateMapping(study)
+  validateMetaAssays(study)
 
   return(invisible(TRUE))
 }
@@ -32,7 +45,7 @@ validateResults <- function(study) {
   results <- study[["results"]]
 
   if (isEmpty(results)) {
-    stop("No results. A valid study requires at least one results table. Use addResults() to add one.")
+    warning("No results. The Differential tab in the app requires at least one results table. Use addResults() to add one.")
   }
 
   for (i in seq_along(results)) {
@@ -262,6 +275,35 @@ validatePlots <- function(study) {
     modelID <- models[i]
     modelPlots <- getPlots(study, modelID, quiet = TRUE)
     if (isEmpty(modelPlots)) next
+    # Validate concordance between plots field models (when models != 'all') and
+    # model names from mapping object
+    for (q in seq_along(modelPlots)) {
+      plotEntry <- names(modelPlots[[q]])
+      if (any(plotEntry %in% 'models')) {
+        plotModelNames <- modelPlots[[q]][['models']]
+
+        if (identical(plotModelNames, "all")) next
+
+        mappingNames <- names(study[["mapping"]])
+        if (modelID %in% mappingNames) {
+          mapName <- modelID
+        } else {
+          mapName <- 'default'
+        }
+        map <- study[["mapping"]][[mapName]]
+        mapModelNames <- colnames(map)
+        if (any(!plotModelNames %in% mapModelNames)) {
+          stop(
+            sprintf("The custom plot \"%s\" has invalid model(s).\n", names(modelPlots)[q]),
+            sprintf("At least one element from field models (\"%s\") is not found in the mapping object \"%s\" column names (\"%s\").",
+                    paste(c(plotModelNames), collapse=', '),
+                    mapName,
+                    paste(mapModelNames, collapse=', '))
+          )
+        }
+      }
+    }
+
     # Custom plots no longer require assays, since they can plot columns from
     # the results table. If assays are unavailable, send a message and then
     # skip the rest of the validation between assays with
@@ -308,9 +350,7 @@ validatePlots <- function(study) {
       stop("Some of the column names of the assays table are missing from the sampleID column in the samples table\n",
            sprintf("modelID: %s", modelID))
     }
-
   } # outer loop of modelIDs
-
   return(invisible(TRUE))
 }
 
@@ -333,7 +373,7 @@ validateMapping <- function(study) {
       }
       # Check whether mapping features match results features
       mappingFeatures <- mapping[[i]][!is.na(mapping[[i]][,ii]),ii]
-      modelFeatures   <- results[[grep(mappingID, models)]][1][[1]][,1]
+      modelFeatures   <- results[[grep(paste0("^",mappingID,"$"), models)]][1][[1]][,1]
       if (!length(intersect(mappingFeatures, modelFeatures)) > 0) {
         stop("Mapping features for modelID do not match features from modelID results table\n",
              sprintf("modelID: %s", mappingID))
@@ -343,3 +383,50 @@ validateMapping <- function(study) {
   return(invisible(TRUE))
 }
 
+validateMetaAssays <- function(study) {
+  metaAssays <- study[["metaAssays"]]
+
+  # metaAssays aren't required
+  if (isEmpty(metaAssays)) return(invisible(NA))
+
+  results <- getResults(study)
+  models  <- names(study[["results"]])
+  for (i in seq_along(models)) {
+    modelID <- models[i]
+    # Need to re-pull in case using modelID "default"
+    modelMetaAssays <- getMetaAssays(study, modelID, quiet = TRUE)
+    if (isEmpty(modelMetaAssays)) next
+
+    # Validate that column names match samples
+    modelSamples <- getSamples(study, modelID, quiet = TRUE)
+    if (!isEmpty(modelSamples)) {
+      samplesInMetaAssays <- modelSamples[[1]] %in% colnames(modelMetaAssays)
+      if (sum(samplesInMetaAssays) == 0) {
+        stop("The sampleIDs in the samples table do not match the column names in the metaAssays table\n",
+             sprintf("modelID: %s", modelID))
+      }
+      if (!all(samplesInMetaAssays)) {
+        message("Validation: ",
+                "Some of the sampleIDs in the samples table are missing from the columns in the metaAssays table\n",
+                sprintf("modelID: %s", modelID))
+      }
+    }
+
+    # Validate that row names match metaFeatures
+    modelMetaFeatures <- getMetaFeatures(study, modelID, quiet = TRUE)
+    if (!isEmpty(modelMetaFeatures)) {
+      metaFeaturesInMetaAssays <- modelMetaFeatures[[2]] %in% rownames(modelMetaAssays)
+      if (sum(metaFeaturesInMetaAssays) == 0) {
+        stop("The metaFeatureIDs in the metaFeatures table do not match the row names in the metaAssays table\n",
+             sprintf("modelID: %s", modelID))
+      }
+      if (!all(metaFeaturesInMetaAssays)) {
+        message("Validation: ",
+                "Some of the metaFeatureIDs in the metaFeatures table are missing from the rows in the metaAssays table\n",
+                sprintf("modelID: %s", modelID))
+      }
+    }
+  }
+
+  return(invisible(TRUE))
+}

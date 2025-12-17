@@ -4,7 +4,7 @@
 \alias{getMetaFeaturesTable}
 \title{Get metaFeatures for a given feature}
 \usage{
-getMetaFeaturesTable(study, modelID, featureID)
+getMetaFeaturesTable(study, modelID, featureID, libraries = NULL)
 }
 \arguments{
 \item{study}{An OmicNavigator study. Either an object of class \code{onStudy},
@@ -13,6 +13,9 @@ or the name of an installed study package.}
 \item{modelID}{Filter by modelID}
 
 \item{featureID}{Filter by featureID}
+
+\item{libraries}{Character vector of library directories to search for study
+packages. If \code{NULL}, uses \code{.libPaths}.}
 }
 \value{
 Returns a data frame with the metaFeatures for the provided

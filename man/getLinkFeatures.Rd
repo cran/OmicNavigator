@@ -4,7 +4,7 @@
 \alias{getLinkFeatures}
 \title{Get the shared features in a network link}
 \usage{
-getLinkFeatures(study, annotationID, termID1, termID2)
+getLinkFeatures(study, annotationID, termID1, termID2, libraries = NULL)
 }
 \arguments{
 \item{study}{An OmicNavigator study. Only accepts name of installed study
@@ -13,6 +13,9 @@ package.}
 \item{annotationID}{Filter by annotationID}
 
 \item{termID1, termID2}{Linked terms to find overlapping features}
+
+\item{libraries}{Character vector of library directories to search for study
+packages. If \code{NULL}, uses \code{.libPaths}.}
 }
 \value{
 Returns a character vector with the features included in both termIDs

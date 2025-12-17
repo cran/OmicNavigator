@@ -4,7 +4,7 @@
 \alias{getBarcodeData}
 \title{Get data for barcode and violin plots}
 \usage{
-getBarcodeData(study, modelID, testID, annotationID, termID)
+getBarcodeData(study, modelID, testID, annotationID, termID, libraries = NULL)
 }
 \arguments{
 \item{study}{An OmicNavigator study. Either an object of class \code{onStudy},
@@ -17,6 +17,9 @@ or the name of an installed study package.}
 \item{annotationID}{Filter by annotationID}
 
 \item{termID}{Filter by termID}
+
+\item{libraries}{Character vector of library directories to search for study
+packages. If \code{NULL}, uses \code{.libPaths}.}
 }
 \value{
 A list with the following components:

@@ -351,7 +351,7 @@ expect_true_xl(
 
 expect_identical_xl(
   names(plottingData),
-  c("assays", "samples", "features")
+  c("assays", "samples", "features", "metaFeatures", "metaAssays", "objects")
 )
 
 expect_true_xl(
@@ -381,6 +381,34 @@ expect_equal_xl(
   features[features[[1]] == "feature_0001", ]
 )
 
+# Without MetaAssays
+testStudyObjNoMetaAssays <- testStudyObj
+testStudyObjNoMetaAssays[["metaAssays"]] <- list()
+plottingDataNoMetaAssays <- getPlottingData(
+  testStudyObjNoMetaAssays,
+  modelID = testModelName,
+  featureID = "feature_0001"
+)
+
+expect_identical_xl(
+  names(plottingDataNoMetaAssays),
+  c("assays", "samples", "features", "objects")
+)
+
+# Without objects
+testStudyObjNoObjects <- testStudyObj
+testStudyObjNoObjects[["objects"]] <- list()
+plottingDataNoObjects <- getPlottingData(
+  testStudyObjNoObjects,
+  modelID = testModelName,
+  featureID = "feature_0001"
+)
+
+expect_identical_xl(
+  names(plottingDataNoObjects),
+  c("assays", "samples", "features", "metaFeatures", "metaAssays")
+)
+
 # getPlottingData (package) ----------------------------------------------------
 
 plottingData <- getPlottingData(
@@ -395,7 +423,7 @@ expect_true_xl(
 
 expect_identical_xl(
   names(plottingData),
-  c("assays", "samples", "features")
+  c("assays", "samples", "features", "metaFeatures", "metaAssays", "objects")
 )
 
 expect_true_xl(
@@ -439,7 +467,7 @@ expect_true_xl(
 
 expect_identical_xl(
   names(plottingData),
-  c("assays", "samples", "features")
+  c("assays", "samples", "features", "metaFeatures", "metaAssays", "objects")
 )
 
 expect_true_xl(
@@ -517,13 +545,13 @@ expect_true_xl(
 )
 
 expect_identical_xl(
-  names(plottingData)[1:2],
-  mmodel
+  names(plottingData),
+  c(mmodel, "mapping")
 )
 
 expect_identical_xl(
   names(plottingData[[1]]),
-  c("assays", "samples", "features", "results")
+  c("assays", "samples", "features", "results", "metaFeatures", "metaAssays", "objects")
 )
 
 expect_identical_xl(
@@ -533,7 +561,7 @@ expect_identical_xl(
 
 expect_identical_xl(
   names(plottingData[[2]]),
-  c("assays", "samples", "features", "results")
+  c("assays", "samples", "features", "results", "metaFeatures", "metaAssays", "objects")
 )
 
 expect_identical_xl(
@@ -587,13 +615,13 @@ expect_true_xl(
 )
 
 expect_identical_xl(
-  names(plottingData)[1:2],
-  mmodel
+  names(plottingData),
+  c(mmodel, "mapping")
 )
 
 expect_identical_xl(
   names(plottingData[[1]]),
-  c("assays", "samples", "features", "results")
+  c("assays", "samples", "features", "results", "metaFeatures", "metaAssays", "objects")
 )
 
 expect_identical_xl(
@@ -603,7 +631,7 @@ expect_identical_xl(
 
 expect_identical_xl(
   names(plottingData[[2]]),
-  c("assays", "samples", "features", "results")
+  c("assays", "samples", "features", "results", "metaFeatures", "metaAssays", "objects")
 )
 
 expect_identical_xl(
@@ -689,6 +717,18 @@ needsSortingAssays <- as.data.frame(needsSortingAssays)
 row.names(needsSortingAssays) <- paste0("f", 1:5)
 names(needsSortingAssays) <- c("one", "two", "three")
 needsSorting <- addAssays(needsSorting, list(main = needsSortingAssays))
+needsSortingMetaFeatures <- data.frame(
+  featureID = c("f4", "f5", "f1", "f3", "f2", "f4", "f5", "f1", "f3", "f2"),
+  metaFeatureID = sprintf("metaFeature_%d", 1:10),
+  MetaFeatureVar = letters[1:10],
+  stringsAsFactors = FALSE
+)
+needsSorting <- addMetaFeatures(needsSorting, list(default = needsSortingMetaFeatures))
+needsSortingMetaAssays <- matrix(rnorm(10 * 3), nrow = 10, ncol = 3)
+needsSortingMetaAssays <- as.data.frame(needsSortingMetaAssays)
+row.names(needsSortingMetaAssays) <- sprintf("metaFeature_%d", 1:10)
+names(needsSortingMetaAssays) <- c("one", "two", "three")
+needsSorting <- addMetaAssays(needsSorting, list(main = needsSortingMetaAssays))
 
 sortedPlottingData <- getPlottingData(
   needsSorting,
@@ -712,6 +752,18 @@ expect_identical_xl(
   rownames(sortedPlottingData[["assays"]]),
   c("f2", "f1", "f3"),
   info = "Assays rows for plotting are sorted according to input featureIDs"
+)
+
+expect_identical_xl(
+  sortedPlottingData[["metaFeatures"]][[1]],
+  c("f2", "f2", "f1", "f1", "f3", "f3"),
+  info = "metaFeatures for plotting are sorted according to input featureIDs"
+)
+
+expect_identical_xl(
+  rownames(sortedPlottingData[["metaAssays"]]),
+  sortedPlottingData[["metaFeatures"]][["metaFeatureID"]],
+  info = "metaAssays rows for plotting are sorted according to input featureIDs"
 )
 
 # getPlottingData() should send warning if featureID or sampleID is missing
@@ -774,6 +826,25 @@ expect_identical_xl(
   "feature_0001"
 )
 
+# Properly subset metaAssays when there are duplicate metaFeatureIDs in 2nd
+# column of metaFeatures table
+dupMetaFeaturesObj <- testStudyObj
+dupMetaFeaturesObj[["metaFeatures"]][["default"]] <- rbind(
+  cbind(dupMetaFeaturesObj[["metaFeatures"]][["default"]], construct = "c1"),
+  cbind(dupMetaFeaturesObj[["metaFeatures"]][["default"]], construct = "c2")
+)
+
+dupMetaFeaturesPlottingData <- getPlottingData(
+  dupMetaFeaturesObj,
+  modelID = testModelName,
+  featureID = "feature_0001"
+)
+
+expect_equal_xl(
+  rownames(dupMetaFeaturesPlottingData[["metaAssays"]]),
+  unique(dupMetaFeaturesPlottingData[["metaFeatures"]][["metaFeatureID"]])
+)
+
 # getPlottingData (object, testID) ---------------------------------------------
 
 plottingData <- getPlottingData(
@@ -794,7 +865,7 @@ expect_true_xl(
 
 expect_identical_xl(
   names(plottingData),
-  c("assays", "samples", "features", "results")
+  c("assays", "samples", "features", "results", "metaFeatures", "metaAssays", "objects")
 )
 
 expect_true_xl(
@@ -848,7 +919,7 @@ expect_true_xl(
 
 expect_identical_xl(
   names(plottingData),
-  c("assays", "samples", "features", "results")
+  c("assays", "samples", "features", "results", "metaFeatures", "metaAssays", "objects")
 )
 
 expect_true_xl(
@@ -902,7 +973,7 @@ expect_true_xl(
 
 expect_identical_xl(
   names(plottingData),
-  c("assays", "samples", "features", "results")
+  c("assays", "samples", "features", "results", "metaFeatures", "metaAssays", "objects")
 )
 
 expect_true_xl(

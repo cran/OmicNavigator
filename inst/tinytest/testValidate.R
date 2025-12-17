@@ -12,7 +12,7 @@ testStudyName <- "ABC"
 testStudyObj <- OmicNavigator:::testStudy(name = testStudyName, version = "0.3")
 testStudyObj <- addPlots(testStudyObj, OmicNavigator:::testPlots())
 minimalStudyObj <- OmicNavigator:::testStudyMinimal()
-emptyStudy <- createStudy(name = "empty", description = "An empty study")
+emptyStudyObj <- createStudy(name = "empty", description = "An empty study")
 
 # Results ----------------------------------------------------------------------
 
@@ -26,10 +26,10 @@ expect_true_xl(
   info = "A minimal study should pass"
 )
 
-expect_error_xl(
-  validateStudy(emptyStudy),
+expect_warning_xl(
+  validateStudy(emptyStudyObj),
   "No results",
-  info = "A valid study requires at least one results table"
+  info = "The Differential tab in the app requires at least one results table"
 )
 
 # Throw warning if no common columns across tests of a model
@@ -104,7 +104,7 @@ invalidAssaysRow <- testStudyObj
 row.names(invalidAssaysRow[["assays"]][[1]]) <- NULL
 
 expect_error_xl(
-  validateStudy(invalidAssaysRow),
+  suppressWarnings(validateStudy(invalidAssaysRow)),
   "The featureID column in the results table does not match the row names of the assays table"
 )
 
@@ -137,18 +137,35 @@ expect_error_xl(
 
 # metaFeatures -----------------------------------------------------------------
 
-# metaFeatures table contains a row with a featureID not in features table
-invalidMetaFeatures <- testStudyObj
-invalidMetaFeatures[["metaFeatures"]][[1]] <- rbind(
-  invalidMetaFeatures[["metaFeatures"]][[1]][1, ],
-  invalidMetaFeatures[["metaFeatures"]][[1]]
+# Ok if metaFeatures table contains a row with a featureID not in features table
+extraFeatureInMetaFeatures <- testStudyObj
+extraFeatureInMetaFeatures[["metaFeatures"]][[1]] <- rbind(
+  extraFeatureInMetaFeatures[["metaFeatures"]][[1]][1, ],
+  extraFeatureInMetaFeatures[["metaFeatures"]][[1]]
 )
-invalidMetaFeatures[["metaFeatures"]][[1]][1, 1] <- "missingInFeaturesTable"
+extraFeatureInMetaFeatures[["metaFeatures"]][[1]][1, 1] <- "missingInFeaturesTable"
 
-# This is ok now. Extra rows in the metaFeatures table won't affect anything in
-# the app
-expect_true_xl(
-  validateStudy(invalidMetaFeatures)
+# Extra rows in the metaFeatures table won't affect anything in the app
+expect_true_xl(validateStudy(extraFeatureInMetaFeatures))
+
+# Fail if completely mismatched featureIDs between features and metaFeatures
+# tables
+mismatchedFeaturesInMetaFeatures <- testStudyObj
+mismatchedFeaturesInMetaFeatures[["metaFeatures"]][[1]][[1]] <- "mismatched"
+
+expect_error_xl(
+  validateStudy(mismatchedFeaturesInMetaFeatures),
+  "The features in the results table do not match the featureID column in the metaFeatures table"
+)
+
+# Message if featureID in results table is missing from metaFeatures table
+missingFeatureInMetaFeatures <- testStudyObj
+missingFeatureInMetaFeatures[["metaFeatures"]][[1]] <-
+  subset(missingFeatureInMetaFeatures[["metaFeatures"]][[1]], customID != "feature_0001")
+
+expect_message_xl(
+  validateStudy(missingFeatureInMetaFeatures),
+  "Some of the features in the results table are missing from the featureID column in the metaFeatures table"
 )
 
 # Results Linkouts -------------------------------------------------------------
@@ -238,6 +255,33 @@ expect_true_xl(
   info = "Samples not required to plot assays data"
 )
 
+# Test validation of optional field "models" for multiModel plots
+studyPlotModels <- testStudyObj
+studyPlotModels[["plots"]][["default"]][["multiModel_scatterplot"]][["models"]] <-
+  "all"
+
+expect_silent_xl(
+  validateStudy(studyPlotModels),
+  info = "multiModel plot with models='all'"
+)
+
+studyPlotModels[["plots"]][["default"]][["multiModel_scatterplot"]][["models"]] <-
+  c("model_01", "model_02")
+
+expect_silent_xl(
+  validateStudy(studyPlotModels),
+  info = "multiModel plot with models=c(valid models)"
+)
+
+studyPlotModels[["plots"]][["default"]][["multiModel_scatterplot"]][["models"]] <-
+  c("model_01", "model_z")
+
+expect_error_xl(
+  validateStudy(studyPlotModels),
+  "has invalid model\\(s\\)",
+  info = "multiModel plot with models=c(invalid models)"
+)
+
 # Mapping ----------------------------------------------------------------------
 
 # Check if model names from mapping are not matching model names from results
@@ -256,4 +300,56 @@ invalidMapping[["mapping"]][[1]]["model_01"] <- rep("non-matching feature", 100)
 expect_error_xl(
   validateStudy(invalidMapping),
   "Mapping features for modelID do not match features from modelID results table\n"
+)
+
+# Bug fix: allow model names to be subset of one another
+mappingModelNameSubset <- createStudy("mappingModelNameSubset")
+mappingModelNameSubset <- addResults(
+  mappingModelNameSubset,
+  OmicNavigator:::testResults(nModels = 2)
+)
+mappingModelNameSubset <- addMapping(
+  mappingModelNameSubset,
+  OmicNavigator:::testMapping()
+)
+modelNamesSubset <- c("model_01", "model_01_subset")
+names(mappingModelNameSubset[["results"]]) <- modelNamesSubset
+names(mappingModelNameSubset[["mapping"]][["default"]]) <- modelNamesSubset
+
+expect_true_xl(validateStudy(mappingModelNameSubset))
+
+# metaAssays -----------------------------------------------------------------------
+
+# Column names should match sampleIDs
+invalidMetaAssaysCols <- testStudyObj
+colnames(invalidMetaAssaysCols[["metaAssays"]][[1]])[1] <- "non-existent"
+
+expect_message_xl(
+  validateStudy(invalidMetaAssaysCols),
+  "Some of the sampleIDs in the samples table are missing from the columns in the metaAssays table"
+)
+
+colnames(invalidMetaAssaysCols[["metaAssays"]][[1]]) <-
+  sprintf("overwrite-all-colnames-%d", seq_along(invalidMetaAssaysCols[["metaAssays"]][[1]]))
+
+expect_error_xl(
+  validateStudy(invalidMetaAssaysCols),
+  "The sampleIDs in the samples table do not match the column names in the metaAssays table"
+)
+
+# Row names should match metaFeatureIDs
+invalidMetaAssaysRows <- testStudyObj
+rownames(invalidMetaAssaysRows[["metaAssays"]][[1]])[1] <- "non-existent"
+
+expect_message_xl(
+  validateStudy(invalidMetaAssaysRows),
+  "Some of the metaFeatureIDs in the metaFeatures table are missing from the rows in the metaAssays table"
+)
+
+rownames(invalidMetaAssaysRows[["metaAssays"]][[1]]) <-
+  sprintf("overwrite-all-rownames-%d", seq_len(nrow(invalidMetaAssaysRows[["metaAssays"]][[1]])))
+
+expect_error_xl(
+  validateStudy(invalidMetaAssaysRows),
+  "The metaFeatureIDs in the metaFeatures table do not match the row names in the metaAssays table"
 )

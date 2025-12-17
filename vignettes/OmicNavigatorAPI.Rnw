@@ -84,29 +84,170 @@ local({
   tmpReport <- tempfile(fileext = ".html")
   writeLines("<p>example</p>", tmpReport)
   abc <- addReports(abc, list(model_02 = tmpReport))
-  OmicNavigator::installStudy(abc)
+  installStudy(abc)
 })
 @
 
-\section{List studies}
-\label{sec:list-studies}
+\section{Dropdowns for differential analsysis tab}
+\label{sec:dropdowns-differential}
 
-List all the available studies along with their models, tests, annotations, and
-plots.
+\subsection{Studies}
+\label{sec:get-results-studies}
 
-\textbf{Update:} The \texttt{plotType} may be a single string or a nested list
-of multiple plot types (e.g. ``singleFeature'' and ``multiTest'')
+\textbf{Update: The endpoint \texttt{listStudies()} was removed in OmicNavigator 1.18.0}
 
-<<list-studies, eval=FALSE>>=
-studies <- listStudies()
+Return the installed studies with differential expression results available. To
+obtain a tooltip description of the study, use \texttt{getStudyMeta()} (Section
+\ref{sec:get-study-meta}).
+
+<<get-results-studies, eval=FALSE>>=
+studies <- getResultsStudies()
 @
 
-<<list-studies-hidden, echo=FALSE>>=
-studies <- listStudies(libraries = .tmplib)
+<<get-results-studies-hidden, echo=FALSE>>=
+studies <- getResultsStudies(libraries = .tmplib)
 @
 
-<<list-studies-json>>=
+<<get-results-studies-json>>=
 toJSON(studies, auto_unbox = TRUE, pretty = TRUE)
+@
+
+\textbf{Warning:} When using \texttt{auto\_unbox}, the returned JSON will be a
+single string instead of a list of strings.
+
+\subsection{Models}
+\label{sec:get-results-models}
+
+For a given study, return the models with differential expression results
+available.
+
+<<get-results-models, eval=FALSE>>=
+models <- getResultsModels(study = "ABC")
+@
+
+<<get-results-models-hidden, echo=FALSE>>=
+models <- getResultsModels(study = "ABC", libraries = .tmplib)
+@
+
+<<get-results-models-json>>=
+toJSON(models, auto_unbox = TRUE, pretty = TRUE)
+@
+
+\subsection{Tests}
+\label{sec:get-results-tests}
+
+For a given study and model, return the tests with differential expression
+results available.
+
+<<get-results-tests, eval=FALSE>>=
+tests <- getResultsTests(study = "ABC", modelID = "model_01")
+@
+
+<<get-results-tests-hidden, echo=FALSE>>=
+tests <- getResultsTests(study = "ABC", modelID = "model_01", libraries = .tmplib)
+@
+
+<<get-results-tests-json>>=
+toJSON(tests, auto_unbox = TRUE, pretty = TRUE)
+@
+
+\section{Dropdowns for enrichment analsysis tab}
+\label{sec:dropdowns-enrichment}
+
+\subsection{Studies}
+\label{sec:get-enrichments-studies}
+
+\textbf{Update: The endpoint \texttt{listStudies()} was removed in OmicNavigator 1.18.0}
+
+Return the installed studies with enrichments available. To obtain a tooltip
+description of the study, use \texttt{getStudyMeta()} (Section
+\ref{sec:get-study-meta}).
+
+<<get-enrichments-studies, eval=FALSE>>=
+studies <- getEnrichmentsStudies()
+@
+
+<<get-enrichments-studies-hidden, echo=FALSE>>=
+studies <- getEnrichmentsStudies(libraries = .tmplib)
+@
+
+<<get-enrichments-studies-json>>=
+toJSON(studies, auto_unbox = TRUE, pretty = TRUE)
+@
+
+\textbf{Warning:} When using \texttt{auto\_unbox}, the returned JSON will be a
+single string instead of a list of strings.
+
+\subsection{Models}
+\label{sec:get-enrichments-models}
+
+For a given study, return the models with enrichments available.
+
+<<get-enrichments-models, eval=FALSE>>=
+models <- getEnrichmentsModels(study = "ABC")
+@
+
+<<get-enrichments-models-hidden, echo=FALSE>>=
+models <- getEnrichmentsModels(study = "ABC", libraries = .tmplib)
+@
+
+<<get-enrichments-models-json>>=
+toJSON(models, auto_unbox = TRUE, pretty = TRUE)
+@
+
+\subsection{Annotations}
+\label{sec:get-enrichments-annotations}
+
+For a given study and model, return the annotations with enrichments available.
+
+<<get-enrichments-annotations, eval=FALSE>>=
+annotations <- getEnrichmentsAnnotations(study = "ABC", modelID = "model_01")
+@
+
+<<get-enrichments-annotations-hidden, echo=FALSE>>=
+annotations <- getEnrichmentsAnnotations(
+  study = "ABC",
+  modelID = "model_01",
+  libraries = .tmplib
+)
+@
+
+<<get-enrichments-annotations-json>>=
+toJSON(annotations, auto_unbox = TRUE, pretty = TRUE)
+@
+
+\section{Study metadata}
+\label{sec:get-study-meta}
+
+\textbf{Update: Added in OmicNavigator 1.17.0}
+
+For a given study, return the description, version, maintainer, maintainer
+email, and any extra custom metadata added by the analyst.
+
+<<study-metadata>>=
+studyMeta <- getStudyMeta(study = "ABC")
+toJSON(studyMeta, auto_unbox = TRUE, pretty = TRUE)
+@
+
+\section{Plots}
+\label{sec:plots}
+
+For a given study and model, return the plots and their metadata.
+
+\begin{itemize}
+
+  \item \texttt{displayName} Name to be displayed in the app
+
+  \item \texttt{plotType} One or more labels that describe the type of plot
+
+  \item \texttt{packages} Packages that must be installed and loaded for plot
+    code to execute
+
+\end{itemize}
+
+<<plots>>=
+plots <- getPlots(study = "ABC", modelID = "model_01")
+toJSON(plots, auto_unbox = TRUE, pretty = TRUE)
 @
 
 \section{Results table}
@@ -145,6 +286,10 @@ resultsTableTerm <- getResultsTable(
 nrow(resultsTableTerm)
 toJSON(resultsTableTerm[1:2, ], pretty = TRUE)
 @
+
+Optional descriptions of each column to be displayed as tooltips can be obtained
+via a call to \texttt{getTests()} with the corresponding \texttt{modelID} and
+\texttt{testID}.
 
 \section{Enrichments table}
 \label{sec:enrichments-table}
@@ -226,16 +371,17 @@ linkFeatures <- getLinkFeatures(
 toJSON(linkFeatures[1:4], pretty = TRUE)
 @
 
-\section{Custom plots}
+\section{Display custom plots}
 \label{sec:custom-plots}
 
 Display the custom plots provided by the user with \texttt{plotStudy()}. Provided a
 study, model, feature, test, and plot, \texttt{plotStudy()} generates the custom plot.
 
 The featureID is obtained from the first column returned by
-\texttt{getResultsTable()} (Section \ref{sec:results-table}). The remaining arguments
-are obtained from the output from \texttt{listStudies()}
-(Section \ref{sec:list-studies}).
+\texttt{getResultsTable()} (Section \ref{sec:results-table}). The remaining
+arguments are obtained from the output from \texttt{getResultsModels()} (Section
+\ref{sec:get-results-models}) and \texttt{getResultsTests()} (Section
+\ref{sec:get-results-tests}).
 
 <<plotStudy-plotBase, fig=TRUE>>=
 plotStudy(
@@ -259,8 +405,8 @@ plotStudy(
 
 The study can also provide ``multiFeature'' plots, which accept more than one
 featureID. These can be distinguished from ``singleFeature'' plots via the
-field \texttt{plotType} in the output from \texttt{listStudies()} (Section
-\ref{sec:list-studies}).
+field \texttt{plotType} in the output from \texttt{getPlots()} (Section
+\ref{sec:plots}).
 
 <<plotStudy-plotMultiFeature, fig=TRUE>>=
 plotStudy(
@@ -274,7 +420,7 @@ plotStudy(
 
 In addition, the study can provide ``multiTest'' plots, which accept more than
 one testID. These can be provided via the field \texttt{plotType} in the output
-from \texttt{listStudies()} (Section \ref{sec:list-studies}). Note that plotType
+from \texttt{getPlots()} (Section \ref{sec:plots}). Note that plotType
 for ``multiTest'' may be provided in a vector,
 e.g. plotType = c(``multiFeature'', ``multiTest''). A call for plotType =
 ``multiTest'' is set to default to plotType = c(``singleFeature'', ``multiTest'')
@@ -291,8 +437,8 @@ plotStudy(
 
 Finally, the study can provide ``multiModel'' plots, which accept more than
 one modelID and one or more testIDs per modelID. These can be provided via the
-field \texttt{plotType} in the output from \texttt{listStudies()} (Section
-\ref{sec:list-studies}). Note that for plotType = ``multiModel'', testID and
+field \texttt{plotType} in the output from \texttt{getPlots()} (Section
+\ref{sec:plots}). Note that for plotType = ``multiModel'', testID and
 modelID should be vectors of same length, where the index position indicate
 which test in testID relate to which model in modelID.
 
@@ -413,7 +559,10 @@ returns the data required to create the barcode and violin plots.
 
 The \texttt{termID} is obtained from \texttt{getEnrichmentsTable()} (Section
 \ref{sec:enrichments-table}). The remaining arguments are obtained from the
-output from \texttt{listStudies()} (Section \ref{sec:list-studies}).
+output from \texttt{getEnrichmentsModels()}(Section
+\ref{sec:get-enrichments-models}), \texttt{getResultsTests()} (Section
+\ref{sec:get-results-tests}), and \texttt{getEnrichmentsAnnotations()} (Section
+\ref{sec:get-enrichments-annotations}).
 
 The elements of the \texttt{data} array are sorted by the value of \texttt{statistic} (highest
 to lowest).

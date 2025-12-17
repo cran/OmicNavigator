@@ -22,6 +22,40 @@ pkgToStudy <- function(pkg) {
   return(study)
 }
 
+getStudiesWithElements <- function(studies, elements, libraries = NULL) {
+  elementsValid <- c(
+    "annotations", "assays", "barcodes", "enrichments", "enrichmentsLinkouts",
+    "features", "mapping", "metaAssays", "metaFeatures", "metaFeaturesLinkouts",
+    "models", "objects", "plots", "reports", "results", "resultsLinkouts",
+    "samples", "tests"
+  )
+  elementsInvalid <- elements[!elements %in% elementsValid]
+  if (length(elementsInvalid) > 0) {
+    invalidElementsMsg <- sprintf(
+      "Invalid element(s): %s\n\nValid elements are %s",
+      paste(elementsInvalid, collapse = ", "),
+      paste(elementsValid, collapse = ", ")
+    )
+    stop(invalidElementsMsg, call. = FALSE)
+  }
+
+  studyPackageElements <- Map(getStudyPackageElements, studies)
+  studyPackageElementsFiltered <- Filter(
+    function(x) all(elements %in% x),
+    studyPackageElements
+  )
+  studiesWithElements <- names(studyPackageElementsFiltered)
+
+  return(studiesWithElements)
+}
+
+# Study should already have package prefix
+getStudyPackageElements <- function(study, libraries = NULL) {
+  studyPackageDir <- system.file("OmicNavigator", package = study, lib.loc = libraries)
+  studyPackageElements <- list.files(studyPackageDir, include.dirs = TRUE)
+  return(studyPackageElements)
+}
+
 ## I/O -------------------------------------------------------------------------
 
 readTable <- function(
@@ -33,7 +67,7 @@ readTable <- function(
   keepLeadingZeros = TRUE,
   ...
 ) {
-  d <- data.table::fread(
+  d <- fread(
     file = x,
     sep = sep,
     header = header,
@@ -50,7 +84,7 @@ readTable <- function(
 }
 
 writeTable <- function(x, file, sep = "\t", quote = TRUE, ...) {
-  data.table::fwrite(
+  fwrite(
     x,
     file = file,
     sep = sep,
@@ -61,11 +95,11 @@ writeTable <- function(x, file, sep = "\t", quote = TRUE, ...) {
 }
 
 readJson <- function(x, simplifyVector = TRUE, ...) {
-  jsonlite::read_json(x, simplifyVector = simplifyVector, ...)
+  read_json(x, simplifyVector = simplifyVector, ...)
 }
 
 writeJson <- function(x, file, auto_unbox = TRUE, pretty = TRUE, ...) {
-    jsonlite::write_json(x, path = file, auto_unbox = auto_unbox, pretty = pretty, ...)
+    write_json(x, path = file, auto_unbox = auto_unbox, pretty = pretty, ...)
 }
 
 ## Lists -----------------------------------------------------------------------
@@ -110,12 +144,12 @@ hasUniqueIdColumn <- function(x) {
 }
 
 enrichmentsToWide <- function(x, type) {
-  output <- data.table::dcast.data.table(
-    data = data.table::as.data.table(x),
+  output <- dcast.data.table(
+    data = as.data.table(x),
     formula = termID + description ~ testID,
     value.var = type
   )
-  data.table::setDF(output)
+  setDF(output)
   return(output)
 }
 
@@ -132,12 +166,14 @@ coerceColsToCharacter <- function(x) {
 
 warnIfNonCharacterCols <- function(x) {
   stopifnot(is.data.frame(x))
+  # Explicitly convert to a simple data frame (eg to support data table input)
+  x <- as.data.frame(x)
 
   characterColsFilter <- vapply(x, is.character, logical(1))
   nonCharacterCols <- colnames(x)[!characterColsFilter]
   if (!isEmpty(nonCharacterCols)) {
-    nonCharacterColsPreview <- utils::capture.output(
-      utils::head(x[, nonCharacterCols, drop = FALSE])
+    nonCharacterColsPreview <- capture.output(
+      head(x[, nonCharacterCols, drop = FALSE])
     )
     if (nrow(x) > 6) {
       nonCharacterColsPreview <- c(nonCharacterColsPreview, "...")

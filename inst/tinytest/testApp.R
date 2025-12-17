@@ -8,7 +8,13 @@ using(ttdo)
 library(OmicNavigator)
 
 testStudyName <- "ABC"
-testStudyObj <- OmicNavigator:::testStudy(name = testStudyName, version = "0.3")
+testStudyObj <- OmicNavigator:::testStudy(
+  name = testStudyName,
+  description = "A test study package for testApp.R",
+  maintainer = "testApp.R",
+  maintainerEmail = "testApp@R",
+  version = "0.3"
+)
 testStudyObj <- addPlots(testStudyObj, OmicNavigator:::testPlots())
 testModelName <- names(testStudyObj[["models"]])[1]
 testTestName <- names(testStudyObj[["tests"]][[1]])[1]
@@ -59,94 +65,41 @@ libOrig <- .libPaths()
 .libPaths(c(tmplib, libOrig))
 suppressMessages(installStudy(testStudyObj))
 
-# listStudies ------------------------------------------------------------------
+# getStudyMeta -----------------------------------------------------------------
 
-studies <- listStudies(libraries = tmplib)
+studyMeta <- getStudyMeta(testStudyName, libraries = tmplib)
 
-expect_identical_xl(
-  length(studies),
-  1L
+expect_false_xl(
+  OmicNavigator:::studyToPkg(testStudyName) %in% loadedNamespaces()
 )
 
 expect_identical_xl(
-  studies[[1]][["name"]],
-  testStudyName
+  studyMeta[["description"]],
+  testStudyObj[["description"]]
+)
+expect_identical_xl(
+  studyMeta[["version"]],
+  testStudyObj[["version"]]
 )
 
 expect_identical_xl(
-  names(studies[[1]]),
-  c("name", "package", "results", "enrichments", "plots")
+  studyMeta[["maintainer"]],
+  testStudyObj[["maintainer"]]
 )
 
 expect_identical_xl(
-  studies[[1]][["package"]][["OmicNavigatorVersion"]],
-  as.character(utils::packageVersion("OmicNavigator"))
+  studyMeta[["maintainerEmail"]],
+  testStudyObj[["maintainerEmail"]]
 )
 
 expect_identical_xl(
-  c("Package", "Title", "Version", "Maintainer", "Description", "OmicNavigatorVersion", "Encoding",
-    names(OmicNavigator:::testStudyMeta()), "Imports", "Built", "description"),
-  names(studies[[1]][["package"]]),
-  info = "listStudies() returns DESCRIPTION"
+  studyMeta[["studyMeta"]],
+  c(list(OmicNavigatorVersion = getPackageVersion()), testStudyObj[["studyMeta"]])
 )
 
-expect_identical_xl(
-  vapply(studies[[1]][["results"]], function(x) x[["modelID"]], character(1)),
-  names(getModels(testStudyObj))
-)
-
-expect_identical_xl(
-  vapply(studies[[1]][["results"]][[1]][["tests"]],
-         function(x) x[["testID"]], character(1)),
-  names(getTests(testStudyObj, modelID = testModelName))
-)
-
-expect_identical_xl(
-  vapply(studies[[1]][["enrichments"]], function(x) x[["modelID"]], character(1)),
-  names(getModels(testStudyObj))
-)
-
-expect_identical_xl(
-  vapply(studies[[1]][["enrichments"]][[1]][["annotations"]],
-         function(x) x[["annotationID"]], character(1)),
-  names(getEnrichments(testStudyObj, modelID = testModelName))
-)
-
-expect_identical_xl(
-  vapply(studies[[1]][["plots"]], function(x) x[["modelID"]], character(1)),
-  names(getModels(testStudyObj))
-)
-
-expect_identical_xl(
-  vapply(studies[[1]][["plots"]][[1]][["plots"]],
-         function(x) x[["plotID"]], character(1)),
-  names(getPlots(testStudyObj, modelID = testModelName))
-)
-
-expect_identical_xl(
-  studies[[1]][["plots"]][[1]][["plots"]][[1]][["plotType"]],
-  "singleFeature"
-)
-
-expect_identical_xl(
-  studies[[1]][["plots"]][[1]][["plots"]][[2]][["plotType"]],
-  "multiFeature"
-)
-
-expect_identical_xl(
-  studies[[1]][["plots"]][[1]][["plots"]][[3]][["plotType"]],
-  "multiTest"
-)
-
-expect_identical_xl(
-  studies[[1]][["plots"]][[1]][["plots"]][[4]][["plotType"]],
-  list("multiFeature", "multiTest")
-)
-
-# If there are no OmicNavigator study packages installed, return an empty list.
-expect_identical_xl(
-  listStudies(libraries = tempfile()),
-  list()
+expect_error_xl(
+  getStudyMeta("missing"),
+  "The package ONstudymissing is not installed"
 )
 
 # getResultsTable --------------------------------------------------------------
@@ -216,6 +169,64 @@ expect_identical_xl(
 expect_equal_xl(
   nrow(resultsTableTerm),
   length(termFeatures)
+)
+
+# getResultsTable (minimal study filtered by annotationID/termID) --------------
+
+# Needs to support a minimal study with no annotations terms. Should return an
+# empty table.
+
+minimalStudyObj <- OmicNavigator:::testStudyMinimal()
+
+minimalResultsTable <- getResultsTable(
+  study = minimalStudyObj,
+  modelID = "model_01",
+  testID = "test_01",
+  annotationID = "annotation_01",
+  termID = "term_01"
+)
+
+expect_identical_xl(minimalResultsTable, data.frame())
+
+# Minimal study with features but no terms. Still return empty data frame.
+
+minimalStudyObjFeatures <- addFeatures(
+  study = minimalStudyObj,
+  features = OmicNavigator:::testFeatures()
+)
+
+minimalResultsTableFeatures <- getResultsTable(
+  study = minimalStudyObjFeatures,
+  modelID = "model_01",
+  testID = "test_01",
+  annotationID = "annotation_01",
+  termID = "term_01"
+)
+
+expect_identical_xl(minimalResultsTableFeatures, data.frame())
+
+# Minimal study with terms but no features. Should return filtered results.
+
+minimalStudyObjTerms <- addAnnotations(
+  study = minimalStudyObj,
+  annotations = OmicNavigator:::testAnnotations()
+)
+
+minimalResultsTableTerms <- getResultsTable(
+  study = minimalStudyObjTerms,
+  modelID = "model_01",
+  testID = "test_01",
+  annotationID = "annotation_01",
+  termID = "term_01"
+)
+
+expect_identical_xl(
+  sort(minimalResultsTableTerms[[1]]),
+  sort(getNodeFeatures(
+    study = minimalStudyObjTerms,
+    annotationID = "annotation_01",
+    termID = "term_01"
+  ))
 )
 
 # getEnrichmentsTable ----------------------------------------------------------

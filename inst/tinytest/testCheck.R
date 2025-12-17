@@ -43,7 +43,7 @@ expect_error_xl(
   createStudy(name = "invalid."),
   "Error: study name cannot end in a period"
  )
- 
+
 # Test error thrown for special characters in study name
 bad_characters <-  c("^", ":", "*", "\\",  ">", "<", "$", "|", "?", "/")
 for (bad_char in bad_characters) {
@@ -238,6 +238,14 @@ expect_warning_xl(
   ".+non-character.+x.+z"
 )
 
+# Support warning about non-character columns for data table input
+nonCharacterFeaturesDt <- nonCharacterFeatures
+nonCharacterFeaturesDt[[1]] <- data.table::as.data.table(nonCharacterFeaturesDt[[1]])
+expect_warning_xl(
+  addFeatures(study, features = nonCharacterFeaturesDt),
+  ".+non-character.+x.+z"
+)
+
 featuresMissing <-  list(
   default = data.frame(
     x = c("a", NA, "c"),
@@ -309,7 +317,7 @@ for (bad_char in bad_characters) {
     "Error: Forbidden character detected in model name"
   )
 }
- 
+
 # Test error thrown for period at end of name
 test <- list("model." = "tooltip")
 expect_error_xl(
@@ -331,7 +339,48 @@ assaysWithNonNumeric <- list(
 )
 
 expect_error_xl(
-  addAssays(study, assays = assaysWithNonNumeric)
+  addAssays(study, assays = assaysWithNonNumeric),
+  "The columns of the assays data frame must all be numeric."
+)
+
+# Throw warning for missing row names
+assaysWithoutRownames <- list(
+  default = data.frame(
+    one = 11:20,
+    two = 21:30
+  )
+)
+
+expect_warning_xl(
+  addAssays(study, assays = assaysWithoutRownames),
+  "The row names of the assays data frame should be the featureIDs."
+)
+
+# Warn that data table input is missing row names
+dtAssays <- OmicNavigator:::testAssays()
+dtAssays <- lapply(dtAssays, function(x) data.table::as.data.table(x))
+
+expect_warning_xl(
+  addAssays(study, assays = dtAssays),
+  "The row names of the assays data frame should be the featureIDs."
+)
+
+# checkMetaAssays ------------------------------------------------------------------
+
+expect_error_xl(
+  addMetaAssays(study, metaAssays = NULL)
+)
+
+metaAssaysWithNonNumeric <- list(
+  default = data.frame(
+    one = letters,
+    two = 1:26
+  )
+)
+
+expect_error_xl(
+  addMetaAssays(study, metaAssays = metaAssaysWithNonNumeric),
+  "The columns of the metaAssays data frame must all be numeric."
 )
 
 # checkTests -------------------------------------------------------------------
@@ -371,7 +420,7 @@ for (bad_char in bad_characters) {
     "Error: Forbidden character detected in test name"
   )
 }
- 
+
 # Test error thrown for period at end of name
 test <- list("test." = "tooltip")
 expect_error_xl(
@@ -390,7 +439,7 @@ expect_error_xl(
    addAnnotations(study, annotations = list(annotation_01 = list("description" = 'hi', "featureID" = "feature_01", "terms" = NULL))),
    'Missing the list of terms for "annotation_01"'
 )
- 
+
 expect_error_xl(
    addAnnotations(study, annotations = list(annotation_01 = list("description" = 'hi', "featureID" = "feature_01", "terms" = list()))),
    'An empty list is not allowed in this context'
@@ -559,6 +608,39 @@ if (getRversion() > "4") {
   )
 }
 
+# Test optional field "models" for multiModel plots
+ftmp <- function(x) NULL
+ptmpSingleAll <-
+  list(m1 = list(ftmp = list(displayName = "test", models = "all")))
+ptmpSingleModels <-
+  list(m1 = list(ftmp = list(displayName = "test", models = c("m1", "m2"))))
+ptmpMultiAll <-
+  list(m1 = list(ftmp = list(displayName = "test", plotType = "multiModel", models = "all")))
+ptmpMultiModels <-
+  list(m1 = list(ftmp = list(displayName = "test",plotType = "multiModel",
+                             models = c("m1", "m2"))))
+expect_silent_xl(
+  OmicNavigator:::checkPlots(ptmpSingleAll),
+  info = "Any plot type can specify models='all'"
+)
+
+expect_error_xl(
+  OmicNavigator:::checkPlots(ptmpSingleModels),
+  "For field models != 'all' plotType field requires 'multiModel'.",
+  info = "Only a multiModel plot can specify specific models"
+)
+
+expect_silent_xl(
+  OmicNavigator:::checkPlots(ptmpMultiAll),
+  info = "A multiModel plot type can specify models='all'"
+)
+
+expect_silent_xl(
+  OmicNavigator:::checkPlots(ptmpMultiAll),
+  info = "A multiModel plot type can specify specific models"
+)
+rm(ftmp)
+
 # checkMapping -----------------------------------------------------------------
 
 expect_error_xl(
@@ -710,3 +792,16 @@ expect_error_xl(
   addMetaFeaturesLinkouts(study, metaFeaturesLinkouts = NULL)
 )
 
+# checkObjects -----------------------------------------------------------------
+
+expect_error_xl(
+  addObjects(study, objects = NULL)
+)
+
+objects <- OmicNavigator:::testObjects()
+objects[["model_04"]] <- list(a = 1, b = 2, c = 3)
+
+expect_error_xl(
+  addObjects(study, objects = objects),
+  "modelID model_04: The object must have a custom class to distinguish it from a list"
+)

@@ -245,7 +245,7 @@ the design diagrammed in Figure \ref{fig:results-2}.
 Furthermore they performed enrichment analysis with one annotation database:
 the Broad Institute's MSigDB c2 collection, which was converted converted
 from human to mouse gene identifiers by
-\href{http://bioinf.wehi.edu.au/software/MSigDB/}{WEHI Bioinformatics}.
+\href{https://bioinf.wehi.edu.au/software/MSigDB/}{WEHI Bioinformatics}.
 
 \begin{figure}[H]
   \includegraphics{images/enrichments-rna}
@@ -397,10 +397,11 @@ For more details, run \texttt{?addResults}.
 % does exactly what I wanted.
 % https://en.wikibooks.org/wiki/LaTeX/Boxes#framebox_and_fbox
 \begin{framed}
-\textbf{Important:} You can stop here! The minimal required data for a valid
-OmicNavigator study is a single results table. Any additional data you add enables
-more features in the app for exploring your study. See Section \ref{sec:mapping}
-for the mapping between data elements and app features.
+\textbf{Important:} You can stop here! With only a single results table, you can
+already start using the app to interactively investigate your study. Any
+additional data you add enables more features in the app for further
+exploration. See Section \ref{sec:mapping} for the mapping between data elements
+and app features.
 \end{framed}
 
 \subsection{Enrichments}
@@ -1121,6 +1122,10 @@ The metaFeatures table has the following requirements:
   be included, the order does not matter, and it is expected that the
   featureIDs will be repeated.
 
+  \item If providing metaAssays (see Section \ref{sec:metaAssays} below), the
+  second column should contain the metaFeatureIDs that correspond to the row
+  names of the metaAssays data frame.
+
   \item The remaining columns must be character vectors.
 
 \end{itemize}
@@ -1128,6 +1133,33 @@ The metaFeatures table has the following requirements:
 Adding the metaFeatures table is similar to the features table. Use a nested
 list to assign the table(s) to a modelID, then use \texttt{addMetaFeatures()}.
 For more details, run \texttt{?addMetaFeatures}.
+
+\subsection{MetaAssays}
+\label{sec:metaAssays}
+
+If the study metaFeatures have associated measurements, you can store these in
+metaAssays via \texttt{addMetaAssays()}. Examples include multiple peptide
+measurements for a single protein or multiple CRISPR guides that map to a single
+gene. These data will then be made available for custom plots (Section
+\ref{sec:create-custom-plots}).
+
+The requirements for the metaAssays data frame are similar to those for the
+assays data frame (Section \ref{sec:assays}):
+
+\begin{itemize}
+
+  \item The row names should match the metaFeatureIDs in the second column of
+  the metaFeatures table (order doesn't matter)
+
+  \item The column names should match the sampleIDs in the first column of the
+  samples table (order doesn't matter)
+
+  \item The columns should all be numeric
+
+\end{itemize}
+
+For more details, run \texttt{?addMetaAssays}. Note that this feature is still
+experimental, and the data format may change in the future.
 
 \subsection{Reports}
 
@@ -1249,6 +1281,17 @@ should be a single value.
 
 For more details, run \texttt{?createStudy}.
 
+\subsection{Objects}
+\label{sec:objects}
+
+If your analysis used a complex R object from a Bioconductor package, {Seurat},
+etc., and you would like to be able to use it when creating custom plots in the
+app (Section \ref{sec:create-custom-plots}), you can add it to a modelID using
+\texttt{addObjects()}.
+
+For more details, run \texttt{?addObjects}. Note that this feature is still
+experimental, and the data format may change in the future.
+
 \section{More information}
 
 This section contains more information about OmicNavigator studies.
@@ -1366,7 +1409,7 @@ Click on the links to be taken to the relevant section.
   \hline
   Enrichments barcode & Barcodes (\ref{sec:barcodes}), Enrichments (\ref{sec:enrichments}),  Results (\ref{sec:results}) &   \\
   \hline
-  Custom plots & Plots (\ref{sec:plots}), Assays (\ref{sec:assays}), Samples (\ref{sec:samples})  &   \\
+  Custom plots & Plots (\ref{sec:plots}), Assays (\ref{sec:assays}) & Features (\ref{sec:features}), Samples (\ref{sec:samples}), Results (\ref{sec:results}), metaFeatures (\ref{sec:metaFeatures}), metaAssays (\ref{sec:metaAssays}), objects (\ref{sec:objects}) \\
   \hline
   MetaFeatures table & metaFeatures (\ref{sec:metaFeatures}) & metaFeaturesLinkouts (\ref{sec:metaFeaturesLinkouts}) \\
   \hline
@@ -1406,7 +1449,7 @@ The app's text is displayed in one of the following fonts. It will choose the
 first font it finds installed on the machine:
 
 \begin{enumerate}
-  \item \href{https://www.fontsquirrel.com/fonts/lato}{Lato}
+  \item Lato
   \item Arial
   \item Helvetica
   \item Any sans-serif font

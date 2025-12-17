@@ -14,27 +14,52 @@ testStudyObj <- addPlots(testStudyObj, OmicNavigator:::testPlots())
 testModelName <- names(testStudyObj[["models"]])[1]
 testTestName <- names(testStudyObj[["tests"]][[1]])[1]
 testAnnotationName <- names(testStudyObj[["annotations"]])[1]
+minimalStudyObj <- OmicNavigator:::testStudyMinimal()
+minimalStudyName <- minimalStudyObj[["name"]]
 
 tmplib <- tempfile()
 dir.create(tmplib)
 libOrig <- .libPaths()
 .libPaths(c(tmplib, libOrig))
 suppressMessages(installStudy(testStudyObj))
+suppressMessages(installStudy(minimalStudyObj))
 
-emptyStudy <- createStudy(name = "empty")
+emptyStudyObj <- createStudy(name = "empty")
 
-# installedStudies -------------------------------------------------------------
+# getInstalledStudies ----------------------------------------------------------
 
 installedStudies <- getInstalledStudies(libraries = tmplib)
 expect_identical_xl(
   installedStudies,
-  testStudyName
+  c(testStudyName, minimalStudyName)
 )
 
-# If there are no OmicNavigator study packages installed, return an empty list.
+# If there are no OmicNavigator study packages installed, return an empty vector
 expect_identical_xl(
-  listStudies(libraries = tempfile()),
-  list()
+  getInstalledStudies(libraries = tempfile()),
+  character(0)
+)
+
+# Test that only valid elements are accepted.
+expect_error_xl(
+  getInstalledStudies(hasElements = c("metaFeatures", "invalidElement")),
+  "invalidElement"
+)
+
+expect_error_xl(
+  getInstalledStudies(hasElements = c("invalidElement1", "invalidElement2")),
+  "invalidElement1, invalidElement2"
+)
+
+expect_identical_xl(
+  getInstalledStudies(hasElements = c("results", "enrichments"), libraries = tmplib),
+  c(testStudyName, minimalStudyName)
+)
+
+# The example minimal study has no plots
+expect_identical_xl(
+  getInstalledStudies(hasElements = c("results", "enrichments", "plots"), libraries = tmplib),
+  testStudyName
 )
 
 # getSamples -------------------------------------------------------------------
@@ -81,7 +106,7 @@ expect_identical_xl(
 )
 
 expect_message_xl(
-  getSamples(emptyStudy),
+  getSamples(emptyStudyObj),
   "No samples available"
 )
 
@@ -133,7 +158,7 @@ expect_identical_xl(
 )
 
 expect_message_xl(
-  getFeatures(emptyStudy),
+  getFeatures(emptyStudyObj),
   "No features available"
 )
 
@@ -175,7 +200,7 @@ expect_message_xl(
 )
 
 expect_message_xl(
-  getAssays(emptyStudy),
+  getAssays(emptyStudyObj),
   "No assays available"
 )
 
@@ -217,7 +242,7 @@ expect_message_xl(
 )
 
 expect_message_xl(
-  getModels(emptyStudy),
+  getModels(emptyStudyObj),
   "No models available"
 )
 
@@ -269,7 +294,7 @@ expect_error_xl(
 )
 
 expect_message_xl(
-  getTests(emptyStudy),
+  getTests(emptyStudyObj),
   "No tests available"
 )
 
@@ -301,7 +326,7 @@ expect_identical_xl(
 )
 
 expect_message_xl(
-  getAnnotations(emptyStudy),
+  getAnnotations(emptyStudyObj),
   "No annotations available"
 )
 
@@ -343,7 +368,7 @@ expect_error_xl(
 )
 
 expect_message_xl(
-  getResults(emptyStudy),
+  getResults(emptyStudyObj),
   "No results available"
 )
 
@@ -440,7 +465,7 @@ expect_error_xl(
 )
 
 expect_message_xl(
-  getEnrichments(emptyStudy),
+  getEnrichments(emptyStudyObj),
   "No enrichments available"
 )
 
@@ -547,7 +572,7 @@ expect_identical_xl(
 )
 
 expect_message_xl(
-  getMetaFeatures(emptyStudy),
+  getMetaFeatures(emptyStudyObj),
   "No metaFeatures available"
 )
 
@@ -574,7 +599,7 @@ expect_identical_xl(
 )
 
 expect_message_xl(
-  getPlots(emptyStudy),
+  getPlots(emptyStudyObj),
   "No plots available"
 )
 
@@ -611,7 +636,7 @@ expect_identical_xl(
 )
 
 expect_message_xl(
-  getMapping(emptyStudy),
+  getMapping(emptyStudyObj),
   "No mapping available"
 )
 
@@ -644,7 +669,7 @@ expect_identical_xl(
 )
 
 expect_message_xl(
-  getBarcodes(emptyStudy),
+  getBarcodes(emptyStudyObj),
   "No barcodes available"
 )
 
@@ -688,7 +713,7 @@ expect_identical_xl(
 )
 
 expect_message_xl(
-  getReports(emptyStudy),
+  getReports(emptyStudyObj),
   "No reports available"
 )
 
@@ -727,7 +752,7 @@ expect_identical_xl(
 )
 
 expect_message_xl(
-  getResultsLinkouts(emptyStudy),
+  getResultsLinkouts(emptyStudyObj),
   "No resultsLinkouts available"
 )
 
@@ -766,7 +791,7 @@ expect_identical_xl(
 )
 
 expect_message_xl(
-  getEnrichmentsLinkouts(emptyStudy),
+  getEnrichmentsLinkouts(emptyStudyObj),
   "No enrichmentsLinkouts available"
 )
 
@@ -805,7 +830,7 @@ expect_identical_xl(
 )
 
 expect_message_xl(
-  getMetaFeaturesLinkouts(emptyStudy),
+  getMetaFeaturesLinkouts(emptyStudyObj),
   "No metaFeaturesLinkouts available"
 )
 
@@ -823,6 +848,90 @@ expect_identical_xl(
   getMetaFeaturesLinkouts(testStudyName, modelID = "model_03"),
   testStudyObj[["metaFeaturesLinkouts"]][["model_03"]],
   info = "Confirm model-specific metaFeatures table linkouts returned"
+)
+
+# getMetaAssays --------------------------------------------------------------------
+
+expect_identical_xl(
+  getMetaAssays(testStudyObj),
+  testStudyObj[["metaAssays"]]
+)
+
+expect_identical_xl(
+  getMetaAssays(testStudyObj, modelID = testModelName),
+  testStudyObj[["metaAssays"]][[testModelName]]
+)
+
+expect_message_xl(
+  getMetaAssays(testStudyObj, modelID = "non-existent-model"),
+  "non-existent-model"
+)
+
+expect_equal_xl(
+  getMetaAssays(testStudyName),
+  testStudyObj[["metaAssays"]]
+)
+
+expect_equal_xl(
+  getMetaAssays(testStudyName, modelID = testModelName),
+  testStudyObj[["metaAssays"]][[testModelName]]
+)
+
+expect_message_xl(
+  getMetaAssays(testStudyName, modelID = "non-existent-model"),
+  "non-existent-model"
+)
+
+expect_message_xl(
+  getMetaAssays(emptyStudyObj),
+  "No metaAssays available"
+)
+
+expect_error_xl(
+  getMetaAssays(1),
+  "No method for object of class \"numeric\""
+)
+
+# getObjects --------------------------------------------------------------
+
+expect_identical_xl(
+  getObjects(testStudyObj),
+  testStudyObj[["objects"]]
+)
+
+expect_identical_xl(
+  getObjects(testStudyObj, modelID = testModelName),
+  testStudyObj[["objects"]][[testModelName]]
+)
+
+expect_message_xl(
+  getObjects(testStudyObj, modelID = "non-existent-model"),
+  "No objects available for modelID \"non-existent-model\""
+)
+
+expect_identical_xl(
+  getObjects(testStudyName),
+  testStudyObj[["objects"]]
+)
+
+expect_identical_xl(
+  getObjects(testStudyName, modelID = testModelName),
+  testStudyObj[["objects"]][[testModelName]]
+)
+
+expect_message_xl(
+  getObjects(testStudyName, modelID = "non-existent-model"),
+  "No objects available for modelID \"non-existent-model\""
+)
+
+expect_message_xl(
+  getObjects(emptyStudyObj),
+  "No objects available"
+)
+
+expect_error_xl(
+  getObjects(1),
+  "No method for object of class \"numeric\""
 )
 
 # Teardown ---------------------------------------------------------------------

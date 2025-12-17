@@ -128,48 +128,72 @@ if (at_home()) {
   expect_silent_xl(
     tarball <- OmicNavigator:::buildPkg(pkgDir)
   )
+  expect_identical_xl(tarball, "onepkg_NA.tar.gz")
+  # note: The NA in the tarball name is because I only provided this minimal
+  # package with a name but not a version in DESCRIPTION
 
   unlink(pkgDir, recursive = TRUE, force = TRUE)
   file.remove(tarball)
 }
 
-# Check package metadata -------------------------------------------------------
-
-suppressMessages(installStudy(testStudyObj, library = tmplib))
-studyMetadata <- listStudies(libraries = tmplib)
-
 expect_identical_xl(
-  studyMetadata[[1]][["name"]],
-  testStudyObj[["name"]]
+  OmicNavigator:::extractTarballName("* building 'ONstudyABC_0.0.0.9000.tar.gz'"),
+  "ONstudyABC_0.0.0.9000.tar.gz"
 )
 
 expect_identical_xl(
-  studyMetadata[[1]][["package"]][["Description"]],
+  OmicNavigator:::extractTarballName("* building 'onepkg_NA.tar.gz'"),
+  "onepkg_NA.tar.gz"
+)
+
+expect_identical_xl(
+  OmicNavigator:::extractTarballName("* building 'OmicNavigator_1.16.0.tar.gz'"),
+  "OmicNavigator_1.16.0.tar.gz"
+)
+
+expect_warning_xl(
+  OmicNavigator:::extractTarballName(""),
+  "Unable to determine name of tarball after build"
+)
+
+# Check package metadata -------------------------------------------------------
+
+suppressMessages(installStudy(testStudyObj, library = tmplib))
+studyMetadata <- getStudyMeta(testStudyName, libraries = tmplib)
+
+expect_identical_xl(
+  studyMetadata[["description"]],
   sprintf("The OmicNavigator data package for the study \"%s\"",
           testStudyObj[["description"]]),
   info = "Default package description when description==name"
 )
 
 expect_identical_xl(
-  studyMetadata[[1]][["package"]][["Version"]],
+  studyMetadata[["version"]],
   "0.0.0.9000",
   info = "Default package version used when version=NULL"
 )
 
 expect_identical_xl(
-  studyMetadata[[1]][["package"]][["Maintainer"]],
-  "Unknown <unknown@unknown>",
+  studyMetadata[["maintainer"]],
+  "Unknown",
   info = "Default package maintainer"
 )
 
 expect_identical_xl(
-  studyMetadata[[1]][["package"]][["department"]],
+  studyMetadata[["maintainerEmail"]],
+  "unknown@unknown",
+  info = "Default package maintainer email"
+)
+
+expect_identical_xl(
+  studyMetadata[["studyMeta"]][["department"]],
   "immunology",
   info = "Custom study metadata passed via studyMeta"
 )
 
 expect_identical_xl(
-  studyMetadata[[1]][["package"]][["organism"]],
+  studyMetadata[["studyMeta"]][["organism"]],
   "Mus musculus",
   info = "Custom study metadata passed via studyMeta"
 )
@@ -181,27 +205,26 @@ updatedStudyObj[["maintainer"]] <- "My Name"
 updatedStudyObj[["maintainerEmail"]] <- "me@email.com"
 
 suppressMessages(installStudy(updatedStudyObj, library = tmplib))
-studyMetadata <- listStudies(libraries = tmplib)
+studyMetadata <- getStudyMeta(testStudyName, libraries = tmplib)
 
 expect_identical_xl(
-  studyMetadata[[1]][["name"]],
-  updatedStudyObj[["name"]]
-)
-
-expect_identical_xl(
-  studyMetadata[[1]][["package"]][["Description"]],
+  studyMetadata[["description"]],
   updatedStudyObj[["description"]]
 )
 
 expect_identical_xl(
-  studyMetadata[[1]][["package"]][["Version"]],
+  studyMetadata[["version"]],
   updatedStudyObj[["version"]]
 )
 
 expect_identical_xl(
-  studyMetadata[[1]][["package"]][["Maintainer"]],
-  sprintf("%s <%s>", updatedStudyObj[["maintainer"]],
-          updatedStudyObj[["maintainerEmail"]])
+  studyMetadata[["maintainer"]],
+  updatedStudyObj[["maintainer"]]
+)
+
+expect_identical_xl(
+  studyMetadata[["maintainerEmail"]],
+  updatedStudyObj[["maintainerEmail"]]
 )
 
 # Remove installed study -------------------------------------------------------
@@ -288,6 +311,31 @@ plotStudy("sharedPlots", modelID = "model_02", featureID = "feature_0001", plotI
 expect_error_xl(
   plotStudy("sharedPlots", modelID = "model_03", featureID = "feature_0001", plotID = "sharedPlot"),
   'The plot "sharedPlot" is not available.'
+)
+
+# Minimal study ----------------------------------------------------------------
+
+emptyStudyObj <- createStudy(name = "empty")
+
+expect_warning_xl(
+  exportStudy(emptyStudyObj, type = "package", path = tempdir()),
+  "No results"
+)
+
+expect_true_xl(
+  dir.exists(file.path(tempdir(), "ONstudyempty/inst/OmicNavigator/"))
+)
+
+assaysOnly <- createStudy(name = "assaysOnly")
+assaysOnly <- addAssays(assaysOnly, OmicNavigator:::testAssays())
+
+expect_warning_xl(
+  exportStudy(assaysOnly, type = "package", path = tempdir()),
+  "No results"
+)
+
+expect_true_xl(
+  dir.exists(file.path(tempdir(), "ONstudyassaysOnly/inst/OmicNavigator/assays"))
 )
 
 # Teardown ---------------------------------------------------------------------

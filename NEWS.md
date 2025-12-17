@@ -1,3 +1,101 @@
+# 1.19.0
+
+* Add support for adding an R object to a study as an RDS file (see
+`?addObjects`)
+* New dropdown menu endpoints to be used by the app
+* Various improvements to documentation and input checking
+* Minor bug fixes
+* Previous patch releases to app included many updates to enrichment tab of app, including
+support for multi-feature plotting, frozen term and description columns, 
+and updated barcode plot styling
+
+# 1.18.11
+
+* The release tarball includes version 2.3.0 of the web app
+
+# 1.18.10
+
+* The release tarball includes version 2.2.9 of the web app
+
+# 1.18.9
+
+* The release tarball includes version 2.2.8 of the web app
+
+# 1.18.8
+
+* The release tarball includes version 2.2.7 of the web app
+
+# 1.18.7
+
+* The release tarball includes version 2.2.6 of the web app
+
+# 1.18.6
+
+* The release tarball includes version 2.2.5 of the web app
+
+# 1.18.5
+
+* The release tarball includes version 2.2.4 of the web app
+
+# 1.18.4
+
+* The release tarball includes version 2.2.3 of the web app
+
+# 1.18.3
+
+* The release tarball includes version 2.2.2 of the web app
+
+# 1.18.2
+
+* The release tarball includes version 2.2.1 of the web app
+
+# 1.18.1
+
+* The release tarball includes version 2.2.0 of the web app
+
+# 1.18.0
+
+* Bug fix: Update importStudy() to return "metaAssays"
+* Bug fix: Do not re-calculate overlaps if they were pre-calculated
+* Bug fix: Reset the row names of the overlaps data frame post-filtering
+* Bug fix: Fix getPlottingData() to return nested metaAssays for multiModel
+plots
+* Remove `listStudies()` and exported summary file (requires version 2.1.1 of
+the web app)
+
+# 1.17.3
+
+* The release tarball includes version 2.1.1 of the web app
+
+# 1.17.2
+
+* The release tarball includes version 2.1.0 of the web app
+
+# 1.17.0
+
+* Add experimental support for metaAssays, numeric measurements of metaFeatures
+(implemented by [John Blischak](https://github.com/jdblischak) and [Elyse Geoffroy](https://github.com/ElyseGeoffroy) in [PR #73](https://github.com/abbvie-external/OmicNavigator/pull/73))
+* Add new flag `hasElements` to `getInstalledStudies()` that filters the studies
+based on the study package content
+(implemented by [Elyse Geoffroy](https://github.com/ElyseGeoffroy) and [John Blischak](https://github.com/jdblischak) in [PR #80](https://github.com/abbvie-external/OmicNavigator/pull/80))
+* Support exporting studies without a results table. Now a study can be empty
+or have other elements other than a results table, and still be exported to a
+study package
+* Add new function `getStudyMeta()` to return the description, version,
+maintainer, maintainer email, and any extra custom metadata added by the analyst
+
+# 1.16.3
+
+* The release tarball includes version 2.0.3 of the web app
+
+# 1.16.2
+
+* The release tarball includes version 2.0.2 of the web app
+
+# 1.16.1
+
+* The release tarball includes version 2.0.1 of the web app
+
 # 1.16.0
 
 * Add support for sharing a custom plotting function across any subset of models

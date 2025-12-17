@@ -37,6 +37,8 @@
 #' @inheritParams addResultsLinkouts
 #' @inheritParams addEnrichmentsLinkouts
 #' @inheritParams addMetaFeaturesLinkouts
+#' @inheritParams addMetaAssays
+#' @inheritParams addObjects
 #'
 #' @return Returns a new OmicNavigator study object, which is a named nested
 #'   list with class \code{onStudy}
@@ -58,6 +60,8 @@
 #'   \code{\link{addResultsLinkouts}},
 #'   \code{\link{addEnrichmentsLinkouts}},
 #'   \code{\link{addMetaFeaturesLinkouts}},
+#'   \code{\link{addMetaAssays}},
+#'   \code{\link{addObjects}},
 #'   \code{\link{exportStudy}},
 #'   \code{\link{installStudy}}
 #'
@@ -94,6 +98,8 @@ createStudy <- function(name,
                         resultsLinkouts = list(),
                         enrichmentsLinkouts = list(),
                         metaFeaturesLinkouts = list(),
+                        metaAssays = list(),
+                        objects = list(),
                         version = NULL,
                         maintainer = NULL,
                         maintainerEmail = NULL,
@@ -124,6 +130,8 @@ createStudy <- function(name,
                 resultsLinkouts = list(),
                 enrichmentsLinkouts = list(),
                 metaFeaturesLinkouts = list(),
+                metaAssays = list(),
+                objects = list(),
                 overlaps = list(),
                 version = version,
                 maintainer = maintainer,
@@ -147,6 +155,8 @@ createStudy <- function(name,
   study <- addResultsLinkouts(study, resultsLinkouts = resultsLinkouts)
   study <- addEnrichmentsLinkouts(study, enrichmentsLinkouts = enrichmentsLinkouts)
   study <- addMetaFeaturesLinkouts(study, metaFeaturesLinkouts = metaFeaturesLinkouts)
+  suppressWarnings(study <- addMetaAssays(study, metaAssays = metaAssays))
+  suppressWarnings(study <- addObjects(study, objects = objects))
 
   return(study)
 }
@@ -176,6 +186,8 @@ NULL
 #'   modelID "default".
 #' @inherit shared-add
 #'
+#' @seealso \code{\link{getSamples}}
+#'
 #' @export
 addSamples <- function(study, samples, reset = FALSE) {
   addElements(study, samples, reset)
@@ -189,6 +201,8 @@ addSamples <- function(study, samples, reset = FALSE) {
 #'   unique values. To share a data frame across multiple models, use the
 #'   modelID "default". All columns will be coerced to character strings.
 #' @inherit shared-add
+#'
+#' @seealso \code{\link{getFeatures}}
 #'
 #' @export
 addFeatures <- function(study, features, reset = FALSE) {
@@ -204,6 +218,8 @@ addFeatures <- function(study, features, reset = FALSE) {
 #'   model. The field "description" will be used to derive the tooltip displayed
 #'   in the app.
 #' @inherit shared-add
+#'
+#' @seealso \code{\link{getModels}}
 #'
 #' @examples
 #'   study <- createStudy("example")
@@ -240,6 +256,8 @@ addModels <- function(study, models, reset = FALSE) {
 #'   modelID "default".
 #' @inherit shared-add
 #'
+#' @seealso \code{\link{getAssays}}
+#'
 #' @export
 addAssays <- function(study, assays, reset = FALSE) {
   addElements(study, assays, reset)
@@ -254,8 +272,13 @@ addAssays <- function(study, assays, reset = FALSE) {
 #'   describing the testID. To share tests across multiple models, use the
 #'   modelID "default". Instead of a single character string, you can provide a
 #'   list of metadata fields about each test. The field "description" will be
-#'   used to derive the tooltip displayed in the app.
+#'   used to derive the tooltip displayed in the app. Furthermore, any fields
+#'   that match the column names in the results table (added via
+#'   \code{\link{addFeatures}} or \code{\link{addResults}}) will be used to
+#'   derive tooltips for those columns.
 #' @inherit shared-add
+#'
+#' @seealso \code{\link{getTests}}
 #'
 #' @examples
 #'   study <- createStudy("example")
@@ -303,6 +326,8 @@ addTests <- function(study, tests, reset = FALSE) {
 #'   character vector of featureIDs.
 #' @inherit shared-add
 #'
+#' @seealso \code{\link{getAnnotations}}
+#'
 #' @export
 addAnnotations <- function(study, annotations, reset = FALSE) {
   addElements(study, annotations, reset)
@@ -316,6 +341,8 @@ addAnnotations <- function(study, annotations, reset = FALSE) {
 #'   results, one for each test. In each data frame, the featureID must be in
 #'   the first column, and all other columns must be numeric.
 #' @inherit shared-add
+#'
+#' @seealso \code{\link{getResults}}
 #'
 #' @export
 addResults <- function(study, results, reset = FALSE) {
@@ -336,6 +363,8 @@ addResults <- function(study, results, reset = FALSE) {
 #'   adjusting for multiple testing). Any additional columns are ignored.
 #' @inherit shared-add
 #'
+#' @seealso \code{\link{getEnrichments}}
+#'
 #' @export
 addEnrichments <- function(study, enrichments, reset = FALSE) {
   addElements(study, enrichments, reset)
@@ -351,10 +380,14 @@ addEnrichments <- function(study, enrichments, reset = FALSE) {
 #'   the study. The input object is a list of data frames (one per model). The
 #'   first column of each data frame is used as the featureID, so it must
 #'   contain the same IDs as the corresponding features data frame
-#'   (\code{\link{addFeatures}}). To share a data frame across multiple models,
-#'   use the modelID "default". All columns will be coerced to character
-#'   strings.
+#'   (\code{\link{addFeatures}}). The second column of each data frame is used
+#'   as the metaFeatureID, and thus should match the row names of any metaAssays
+#'   added via \code{\link{addMetaAssays}}. To share a data frame across
+#'   multiple models, use the modelID "default". All columns will be coerced to
+#'   character strings.
 #' @inherit shared-add
+#'
+#' @seealso \code{\link{getMetaFeatures}}
 #'
 #' @export
 addMetaFeatures <- function(study, metaFeatures, reset = FALSE) {
@@ -431,7 +464,10 @@ addMetaFeatures <- function(study, metaFeatures, reset = FALSE) {
 #'
 #' @inherit shared-add
 #'
-#' @seealso \code{\link{getPlottingData}}, \code{\link{plotStudy}}
+#' @seealso
+#'   \code{\link{getPlots}},
+#'   \code{\link{getPlottingData}},
+#'   \code{\link{plotStudy}}
 #'
 #' @export
 addPlots <- function(study, plots, reset = FALSE) {
@@ -465,7 +501,10 @@ addPlots <- function(study, plots, reset = FALSE) {
 #' are found in the same row.
 #' @inherit shared-add
 #'
-#' @seealso \code{\link{getPlottingData}}, \code{\link{plotStudy}}
+#' @seealso
+#'   \code{\link{getMapping}},
+#'   \code{\link{getPlottingData}},
+#'   \code{\link{plotStudy}}
 #'
 #' @export
 addMapping <- function(study, mapping, reset = FALSE) {
@@ -495,6 +534,8 @@ addMapping <- function(study, mapping, reset = FALSE) {
 #'   To share metadata across multiple models, use the modelID "default".
 #' @inherit shared-add
 #'
+#' @seealso \code{\link{getBarcodes}}
+#'
 #' @export
 addBarcodes <- function(study, barcodes, reset = FALSE) {
   addElements(study, barcodes, reset)
@@ -512,6 +553,8 @@ addBarcodes <- function(study, barcodes, reset = FALSE) {
 #'   package. To share a report across multiple models, use the modelID
 #'   "default".
 #' @inherit shared-add
+#'
+#' @seealso \code{\link{getReports}}
 #'
 #' @export
 addReports <- function(study, reports, reset = FALSE) {
@@ -559,7 +602,9 @@ addReports <- function(study, reports, reset = FALSE) {
 #'   )
 #'   study <- addResultsLinkouts(study, resultsLinkouts)
 #'
-#' @seealso \code{\link{addFeatures}}
+#' @seealso
+#'   \code{\link{getResultsLinkouts}},
+#'   \code{\link{addFeatures}}
 #'
 #' @export
 addResultsLinkouts <- function(study, resultsLinkouts, reset = FALSE) {
@@ -603,7 +648,10 @@ addResultsLinkouts <- function(study, resultsLinkouts, reset = FALSE) {
 #'   )
 #'   study <- addEnrichmentsLinkouts(study, enrichmentsLinkouts)
 #'
-#' @seealso \code{\link{addAnnotations}}, \code{\link{addEnrichments}}
+#' @seealso
+#'   \code{\link{getEnrichmentsLinkouts}},
+#'   \code{\link{addAnnotations}},
+#'   \code{\link{addEnrichments}}
 #'
 #' @export
 addEnrichmentsLinkouts <- function(study, enrichmentsLinkouts, reset = FALSE) {
@@ -651,11 +699,67 @@ addEnrichmentsLinkouts <- function(study, enrichmentsLinkouts, reset = FALSE) {
 #'   )
 #'   study <- addMetaFeaturesLinkouts(study, metaFeaturesLinkouts)
 #'
-#' @seealso \code{\link{addMetaFeatures}}
+#' @seealso
+#'   \code{\link{getMetaFeaturesLinkouts}},
+#'   \code{\link{addMetaFeatures}}
 #'
 #' @export
 addMetaFeaturesLinkouts <- function(study, metaFeaturesLinkouts, reset = FALSE) {
   addElements(study, metaFeaturesLinkouts, reset)
+}
+
+#' Add metaAssays
+#'
+#' Experimental. Add metaAssay measurements that map to the metaFeatureIDs in
+#' the metaFeatures table.
+#'
+#' @param metaAssays The metaAssays from the study. The input object is a list
+#'   of data frames (one per model). The row names should correspond to the
+#'   metaFeatureIDs (second column of data frame added via
+#'   \code{\link{addMetaFeatures}}). The column names should correspond to the
+#'   sampleIDs (\code{\link{addSamples}}). The data frame should only contain
+#'   numeric values. To share a data frame across multiple models, use the
+#'   modelID "default".
+#' @inheritParams shared-add
+#'
+#' @seealso
+#'   \code{\link{getMetaAssays}},
+#'   \code{\link{addAssays}},
+#'   \code{\link{addMetaFeatures}}
+#'
+#' @export
+addMetaAssays <- function(study, metaAssays, reset = FALSE) {
+  warning("Support for metaAssays is highly experimental")
+  addElements(study, metaAssays, reset)
+}
+
+#' Add objects
+#'
+#' Experimental. Add arbitrary R objects to a study. These will be exported via
+#' \code{\link[base]{saveRDS}} and imported via \code{\link[base]{readRDS}}.
+#' This allows preserving the exact structure of complex R objects.
+#'
+#' The main purpose of adding a custom object to your study package is to use it
+#' in custom plots in the app. If available, they will be returned by
+#' \code{\link{getPlottingData}}. If the custom package requires additional R
+#' packages to be available to use, make sure to list these packages in the
+#' field \code{packages} when adding the custom plotting function via
+#' \code{\link{addPlots}}.
+#'
+#' @param objects Any arbitrary R objects from the study. The input object is a
+#'   list of objects (one per model). To share an object across multiple models,
+#'   use the modelID "default".
+#' @inheritParams shared-add
+#'
+#' @seealso
+#'   \code{\link{getObjects}},
+#'   \code{\link[base]{saveRDS}},
+#'   \code{\link[base]{readRDS}}
+#'
+#' @export
+addObjects <- function(study, objects, reset = FALSE) {
+  warning("Support for objects is highly experimental")
+  addElements(study, objects, reset)
 }
 
 addElements <- function(study, elements, reset = FALSE) {
@@ -668,17 +772,17 @@ addElements <- function(study, elements, reset = FALSE) {
   # but it also seems like a lot simply to internally dispatch these functions
   # here and also in validateStudy().
   checkFunctionName <- paste0("check", capitalize(elementsName))
-  checkFunction <- utils::getFromNamespace(checkFunctionName, ns = "OmicNavigator")
+  checkFunction <- getFromNamespace(checkFunctionName, ns = "OmicNavigator")
   checkFunction(elements)
   sanitizeFunctionName <- paste0("sanitize", capitalize(elementsName))
-  sanitizeFunction <- utils::getFromNamespace(sanitizeFunctionName, ns = "OmicNavigator")
+  sanitizeFunction <- getFromNamespace(sanitizeFunctionName, ns = "OmicNavigator")
   elements <- sanitizeFunction(elements)
 
   if (reset) {
     study[[elementsName]] <- list()
   }
 
-  study[[elementsName]] <- utils::modifyList(study[[elementsName]], elements)
+  study[[elementsName]] <- modifyList(study[[elementsName]], elements)
 
   return(study)
 }

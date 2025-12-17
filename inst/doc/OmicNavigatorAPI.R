@@ -27,30 +27,138 @@ local({
   tmpReport <- tempfile(fileext = ".html")
   writeLines("<p>example</p>", tmpReport)
   abc <- addReports(abc, list(model_02 = tmpReport))
-  OmicNavigator::installStudy(abc)
+  installStudy(abc)
 })
 
 
 ###################################################
-### code chunk number 4: list-studies (eval = FALSE)
+### code chunk number 4: get-results-studies (eval = FALSE)
 ###################################################
-## studies <- listStudies()
+## studies <- getResultsStudies()
 
 
 ###################################################
-### code chunk number 5: list-studies-hidden
+### code chunk number 5: get-results-studies-hidden
 ###################################################
-studies <- listStudies(libraries = .tmplib)
+studies <- getResultsStudies(libraries = .tmplib)
 
 
 ###################################################
-### code chunk number 6: list-studies-json
+### code chunk number 6: get-results-studies-json
 ###################################################
 toJSON(studies, auto_unbox = TRUE, pretty = TRUE)
 
 
 ###################################################
-### code chunk number 7: results-table
+### code chunk number 7: get-results-models (eval = FALSE)
+###################################################
+## models <- getResultsModels(study = "ABC")
+
+
+###################################################
+### code chunk number 8: get-results-models-hidden
+###################################################
+models <- getResultsModels(study = "ABC", libraries = .tmplib)
+
+
+###################################################
+### code chunk number 9: get-results-models-json
+###################################################
+toJSON(models, auto_unbox = TRUE, pretty = TRUE)
+
+
+###################################################
+### code chunk number 10: get-results-tests (eval = FALSE)
+###################################################
+## tests <- getResultsTests(study = "ABC", modelID = "model_01")
+
+
+###################################################
+### code chunk number 11: get-results-tests-hidden
+###################################################
+tests <- getResultsTests(study = "ABC", modelID = "model_01", libraries = .tmplib)
+
+
+###################################################
+### code chunk number 12: get-results-tests-json
+###################################################
+toJSON(tests, auto_unbox = TRUE, pretty = TRUE)
+
+
+###################################################
+### code chunk number 13: get-enrichments-studies (eval = FALSE)
+###################################################
+## studies <- getEnrichmentsStudies()
+
+
+###################################################
+### code chunk number 14: get-enrichments-studies-hidden
+###################################################
+studies <- getEnrichmentsStudies(libraries = .tmplib)
+
+
+###################################################
+### code chunk number 15: get-enrichments-studies-json
+###################################################
+toJSON(studies, auto_unbox = TRUE, pretty = TRUE)
+
+
+###################################################
+### code chunk number 16: get-enrichments-models (eval = FALSE)
+###################################################
+## models <- getEnrichmentsModels(study = "ABC")
+
+
+###################################################
+### code chunk number 17: get-enrichments-models-hidden
+###################################################
+models <- getEnrichmentsModels(study = "ABC", libraries = .tmplib)
+
+
+###################################################
+### code chunk number 18: get-enrichments-models-json
+###################################################
+toJSON(models, auto_unbox = TRUE, pretty = TRUE)
+
+
+###################################################
+### code chunk number 19: get-enrichments-annotations (eval = FALSE)
+###################################################
+## annotations <- getEnrichmentsAnnotations(study = "ABC", modelID = "model_01")
+
+
+###################################################
+### code chunk number 20: get-enrichments-annotations-hidden
+###################################################
+annotations <- getEnrichmentsAnnotations(
+  study = "ABC",
+  modelID = "model_01",
+  libraries = .tmplib
+)
+
+
+###################################################
+### code chunk number 21: get-enrichments-annotations-json
+###################################################
+toJSON(annotations, auto_unbox = TRUE, pretty = TRUE)
+
+
+###################################################
+### code chunk number 22: study-metadata
+###################################################
+studyMeta <- getStudyMeta(study = "ABC")
+toJSON(studyMeta, auto_unbox = TRUE, pretty = TRUE)
+
+
+###################################################
+### code chunk number 23: plots
+###################################################
+plots <- getPlots(study = "ABC", modelID = "model_01")
+toJSON(plots, auto_unbox = TRUE, pretty = TRUE)
+
+
+###################################################
+### code chunk number 24: results-table
 ###################################################
 resultsTable <- getResultsTable(
   study = "ABC",
@@ -62,7 +170,7 @@ toJSON(resultsTable[1:2, ], pretty = TRUE)
 
 
 ###################################################
-### code chunk number 8: results-table-term
+### code chunk number 25: results-table-term
 ###################################################
 resultsTableTerm <- getResultsTable(
   study = "ABC",
@@ -76,7 +184,7 @@ toJSON(resultsTableTerm[1:2, ], pretty = TRUE)
 
 
 ###################################################
-### code chunk number 9: enrichments-table
+### code chunk number 26: enrichments-table
 ###################################################
 enrichmentsTable <- getEnrichmentsTable(
   study = "ABC",
@@ -87,7 +195,7 @@ toJSON(enrichmentsTable[1:2, ], pretty = TRUE)
 
 
 ###################################################
-### code chunk number 10: enrichments-table-adjusted
+### code chunk number 27: enrichments-table-adjusted
 ###################################################
 enrichmentsTable <- getEnrichmentsTable(
   study = "ABC",
@@ -99,7 +207,7 @@ toJSON(enrichmentsTable[1:2, ], pretty = TRUE)
 
 
 ###################################################
-### code chunk number 11: enrichments-network
+### code chunk number 28: enrichments-network
 ###################################################
 enrichmentsNetwork <- getEnrichmentsNetwork(
   study = "ABC",
@@ -115,7 +223,7 @@ toJSON(enrichmentsNetworkMinimal, auto_unbox = TRUE, pretty = TRUE)
 
 
 ###################################################
-### code chunk number 12: getNodeFeatures
+### code chunk number 29: getNodeFeatures
 ###################################################
 nodeFeatures <- getNodeFeatures(
   study = "ABC",
@@ -126,7 +234,7 @@ toJSON(nodeFeatures[1:4], pretty = TRUE)
 
 
 ###################################################
-### code chunk number 13: getLinkFeatures
+### code chunk number 30: getLinkFeatures
 ###################################################
 linkFeatures <- getLinkFeatures(
   study = "ABC",
@@ -138,7 +246,7 @@ toJSON(linkFeatures[1:4], pretty = TRUE)
 
 
 ###################################################
-### code chunk number 14: plotStudy-plotBase
+### code chunk number 31: plotStudy-plotBase
 ###################################################
 plotStudy(
   study = "ABC",
@@ -150,7 +258,7 @@ plotStudy(
 
 
 ###################################################
-### code chunk number 15: plotStudy-plotGg
+### code chunk number 32: plotStudy-plotGg
 ###################################################
 plotStudy(
   study = "ABC",
@@ -162,7 +270,7 @@ plotStudy(
 
 
 ###################################################
-### code chunk number 16: plotStudy-plotMultiFeature
+### code chunk number 33: plotStudy-plotMultiFeature
 ###################################################
 plotStudy(
   study = "ABC",
@@ -174,7 +282,7 @@ plotStudy(
 
 
 ###################################################
-### code chunk number 17: plotStudy-plotMultiTest
+### code chunk number 34: plotStudy-plotMultiTest
 ###################################################
 plotStudy(
   study = "ABC",
@@ -186,7 +294,7 @@ plotStudy(
 
 
 ###################################################
-### code chunk number 18: plotStudy-plotMultiModel
+### code chunk number 35: plotStudy-plotMultiModel
 ###################################################
 modelID <- c("model_01", "model_02")
 testID <- c("test_01", "test_02")
@@ -201,7 +309,7 @@ plotStudy(
 
 
 ###################################################
-### code chunk number 19: getResultsIntersection
+### code chunk number 36: getResultsIntersection
 ###################################################
 resultsIntersection <- getResultsIntersection(
   study = "ABC",
@@ -217,7 +325,7 @@ toJSON(resultsIntersection[1:2, ], pretty = TRUE)
 
 
 ###################################################
-### code chunk number 20: getEnrichmentsIntersection
+### code chunk number 37: getEnrichmentsIntersection
 ###################################################
 enrichmentsIntersection <- getEnrichmentsIntersection(
   study = "ABC",
@@ -233,7 +341,7 @@ toJSON(enrichmentsIntersection[1:2, ], pretty = TRUE)
 
 
 ###################################################
-### code chunk number 21: getResultsUpset
+### code chunk number 38: getResultsUpset
 ###################################################
 resultsUpset <- getResultsUpset(
   study = "ABC",
@@ -245,7 +353,7 @@ resultsUpset <- getResultsUpset(
 
 
 ###################################################
-### code chunk number 22: getEnrichmentsUpset
+### code chunk number 39: getEnrichmentsUpset
 ###################################################
 enrichmentsUpset <- getEnrichmentsUpset(
   study = "ABC",
@@ -258,7 +366,7 @@ enrichmentsUpset <- getEnrichmentsUpset(
 
 
 ###################################################
-### code chunk number 23: getUpsetCols
+### code chunk number 40: getUpsetCols
 ###################################################
 upsetCols <- getUpsetCols(
   study = "ABC",
@@ -268,7 +376,7 @@ toJSON(upsetCols, auto_unbox = TRUE, pretty = TRUE)
 
 
 ###################################################
-### code chunk number 24: metaFeatures-table
+### code chunk number 41: metaFeatures-table
 ###################################################
 metaFeaturesTable <- getMetaFeaturesTable(
   study = "ABC",
@@ -279,7 +387,7 @@ toJSON(metaFeaturesTable[1:2, ], pretty = TRUE)
 
 
 ###################################################
-### code chunk number 25: getBarcodeData
+### code chunk number 42: getBarcodeData
 ###################################################
 barcodeData <- getBarcodeData(
   study = "ABC",
@@ -292,7 +400,7 @@ toJSON(barcodeData, auto_unbox = TRUE, pretty = TRUE)
 
 
 ###################################################
-### code chunk number 26: getReportLink-URL
+### code chunk number 43: getReportLink-URL
 ###################################################
 reportLink <- getReportLink(
   study = "ABC",
@@ -302,7 +410,7 @@ toJSON(reportLink, auto_unbox = TRUE, pretty = TRUE)
 
 
 ###################################################
-### code chunk number 27: getReportLink-file
+### code chunk number 44: getReportLink-file
 ###################################################
 reportLink <- getReportLink(
   study = "ABC",
@@ -312,7 +420,7 @@ toJSON(reportLink, auto_unbox = TRUE, pretty = TRUE)
 
 
 ###################################################
-### code chunk number 28: getResultsLinkouts
+### code chunk number 45: getResultsLinkouts
 ###################################################
 resultsLinkouts <- getResultsLinkouts(
   study = "ABC",
@@ -322,7 +430,7 @@ toJSON(resultsLinkouts, auto_unbox = TRUE, pretty = 2)
 
 
 ###################################################
-### code chunk number 29: getEnrichmentsLinkouts
+### code chunk number 46: getEnrichmentsLinkouts
 ###################################################
 enrichmentsLinkouts <- getEnrichmentsLinkouts(
   study = "ABC",
@@ -332,7 +440,7 @@ toJSON(enrichmentsLinkouts, auto_unbox = TRUE, pretty = 2)
 
 
 ###################################################
-### code chunk number 30: getEnrichmentsLinkouts-2
+### code chunk number 47: getEnrichmentsLinkouts-2
 ###################################################
 enrichmentsLinkouts <- getEnrichmentsLinkouts(
   study = "ABC",
@@ -342,7 +450,7 @@ toJSON(enrichmentsLinkouts, auto_unbox = TRUE, pretty = TRUE)
 
 
 ###################################################
-### code chunk number 31: getMetaFeaturesLinkouts
+### code chunk number 48: getMetaFeaturesLinkouts
 ###################################################
 metaFeaturesLinkouts <- getMetaFeaturesLinkouts(
   study = "ABC",
@@ -352,7 +460,7 @@ toJSON(metaFeaturesLinkouts, auto_unbox = TRUE, pretty = 2)
 
 
 ###################################################
-### code chunk number 32: getFavicons
+### code chunk number 49: getFavicons
 ###################################################
 resultsFavicons <- getFavicons(linkouts = resultsLinkouts)
 toJSON(resultsFavicons, auto_unbox = TRUE, pretty = 2)
@@ -361,7 +469,7 @@ toJSON(enrichmentsFavicons, auto_unbox = TRUE, pretty = 2)
 
 
 ###################################################
-### code chunk number 33: unavailable-data
+### code chunk number 50: unavailable-data
 ###################################################
 toJSON(getResultsTable(study = "ABC", modelID = "?", testID = "?"))
 toJSON(getEnrichmentsTable(study = "ABC", modelID = "?", annotationID = "?"))
@@ -384,7 +492,7 @@ toJSON(getEnrichmentsLinkouts(study = "ABC", annotationID = "?"))
 
 
 ###################################################
-### code chunk number 34: getPackageVersion
+### code chunk number 51: getPackageVersion
 ###################################################
 toJSON(getPackageVersion(), auto_unbox = TRUE)
 
